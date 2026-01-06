@@ -8,7 +8,7 @@ function Footer() {
         <div class="flex md:justify-between justify-center w-full gap-4">
           <div>
             <script>document.write(new Date().getFullYear())</script> © -{" "}
-            <a>2025 ApolloComputerEducation Designed by JRM Infotech</a>
+            <a>2026 - JRM Infotech</a>
           </div>
         </div>
       </footer>

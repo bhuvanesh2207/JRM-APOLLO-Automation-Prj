@@ -6,7 +6,7 @@ import Sidebar from "../compomnents/Sidebar";
 import Footer from "../compomnents/Footer";
 
 // Example images – replace with your real file paths
-import BannerImage from "../assets/images/LoginPage.avif";
+import BannerImage from "../assets/images/Automation.jpg";
 
 // JRM card images
 import JrmImg1 from "../assets/images/DomainTraker.avif";
