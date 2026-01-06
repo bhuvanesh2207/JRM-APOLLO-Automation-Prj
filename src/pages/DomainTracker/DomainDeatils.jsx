@@ -1,4 +1,6 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
+import { FaEdit, FaTrashAlt, FaHistory } from "react-icons/fa";
 import Navbar from "../../compomnents/Navbar";
 import Sidebar from "../../compomnents/Sidebar";
 
@@ -35,6 +37,8 @@ const DomainDeatils = ({
   onDeleteDomain,
   onViewHistory,
 }) => {
+  const navigate = useNavigate();
+
   // Use real domains if provided, otherwise fall back to dummy data
   const dataToRender = domains.length ? domains : dummyDomains;
 
@@ -47,7 +51,7 @@ const DomainDeatils = ({
     if (onEditDomain) {
       onEditDomain(domainId);
     } else {
-      alert(`Edit domain: ${domainId}`);
+      navigate(`/domain/update/${domainId}`);
     }
   };
 
@@ -104,7 +108,7 @@ const DomainDeatils = ({
           <div className="bg-white rounded-lg shadow-lg p-6">
             <div className="table-header">
               <h2>
-                <i className="fas fa-list domain-icon" /> Managed Domains
+                <FaHistory className="domain-icon" /> Managed Domains
               </h2>
               <div className="domain-count" id="domainCount">
                 {finalCountText}
@@ -112,7 +116,6 @@ const DomainDeatils = ({
             </div>
 
             <div className="table-responsive">
-              {/* We always have dataToRender (dummy or real), so no empty state here */}
               <table id="domainsTable">
                 <thead>
                   <tr>
@@ -223,7 +226,7 @@ const DomainDeatils = ({
                               title="Edit domain"
                               onClick={() => handleEditDomain(domain.id)}
                             >
-                              <i className="fas fa-edit" />
+                              <FaEdit />
                             </button>
                             <button
                               type="button"
@@ -231,7 +234,7 @@ const DomainDeatils = ({
                               title="Delete domain"
                               onClick={() => handleDeleteDomain(domain.id)}
                             >
-                              <i className="fas fa-trash-alt" />
+                              <FaTrashAlt />
                             </button>
                             <button
                               type="button"
@@ -239,7 +242,7 @@ const DomainDeatils = ({
                               title="View history"
                               onClick={() => handleViewHistory(domain.id)}
                             >
-                              <i className="fas fa-history" />
+                              <FaHistory />
                             </button>
                           </div>
                         </td>

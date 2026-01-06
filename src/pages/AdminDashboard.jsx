@@ -1,5 +1,6 @@
 // AdminDashboard.jsx
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Navbar from "../compomnents/Navbar";
 import Sidebar from "../compomnents/Sidebar";
 import Footer from "../compomnents/Footer";
@@ -16,26 +17,40 @@ import JrmImg3 from "../assets/images/DomainTraker.avif";
 import ApolloImg1 from "../assets/images/DomainTraker.avif";
 import ApolloImg2 from "../assets/images/DomainTraker.avif";
 import ApolloImg3 from "../assets/images/DomainTraker.avif";
-// you can add more Apollo images as needed
 
 // change their titles / images.
 const CARD_DATA = {
   JRM: [
-    { id: "j1", title: "Domain Tracker", image: JrmImg1 },
-    { id: "j2", title: "JRM Card 2", image: JrmImg2 },
-    { id: "j3", title: "JRM Card 3", image: JrmImg3 },
+    { id: "j1", title: "Domain Tracker", image: JrmImg1, path: "/domain/all" },
+    { id: "j2", title: "JRM Card 2", image: JrmImg2, path: "/jrm/card-2" },
+    { id: "j3", title: "JRM Card 3", image: JrmImg3, path: "/jrm/card-3" },
   ],
 
   Apollo: [
-    { id: "a1", title: "Apollo Card 1", image: ApolloImg1 },
-    { id: "a2", title: "Apollo Card 2", image: ApolloImg2 },
-    { id: "a3", title: "Apollo Card 3", image: ApolloImg3 },
-    // add/remove Apollo cards here
+    {
+      id: "a1",
+      title: "Apollo Card 1",
+      image: ApolloImg1,
+      path: "/apollo/domain-tracker",
+    },
+    {
+      id: "a2",
+      title: "Apollo Card 2",
+      image: ApolloImg2,
+      path: "/apollo/card-2",
+    },
+    {
+      id: "a3",
+      title: "Apollo Card 3",
+      image: ApolloImg3,
+      path: "/apollo/card-3",
+    },
   ],
 };
 
 function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("JRM");
+  const navigate = useNavigate();
 
   // cards for current tab
   const cards = CARD_DATA[activeTab] || [];
@@ -48,11 +63,9 @@ function AdminDashboard() {
         paddingTop: "var(--tw-topbar-height)",
       }}
     >
-      {/* Sidebar + Navbar are positioned via CSS */}
       <Sidebar />
       <Navbar />
 
-      {/* Main dashboard body placed inside a centered card container */}
       <main className="app-main">
         <div className="max-w-[1200px] mx-auto px-5 mt-6">
           <div className="bg-white rounded-lg shadow-lg p-6">
@@ -66,9 +79,8 @@ function AdminDashboard() {
                 />
               </div>
 
-              {/* Tabs + card grid, visually attached under the image */}
               <section className="dashboard-section">
-                {/* JRM / Apollo tabs overlapping the top border */}
+                {/* Tabs */}
                 <div className="dashboard-tabs-wrapper">
                   <div className="dashboard-tabs">
                     <button
@@ -94,7 +106,7 @@ function AdminDashboard() {
                   </div>
                 </div>
 
-                {/* Cards grid – layout driven by CSS, number driven by CARD_DATA */}
+                {/* Cards */}
                 <div className="dashboard-card-grid">
                   {cards.map((card) => (
                     <div
@@ -105,8 +117,9 @@ function AdminDashboard() {
                           ? "dashboard-card--jrm"
                           : "dashboard-card--apollo")
                       }
+                      onClick={() => navigate(card.path)}
+                      style={{ cursor: "pointer" }}
                     >
-                      {/* Top 150px: card-specific image */}
                       <div className="dashboard-card-image">
                         <img
                           src={card.image}
@@ -115,7 +128,6 @@ function AdminDashboard() {
                         />
                       </div>
 
-                      {/* Bottom 50px: centered title */}
                       <div className="dashboard-card-title-wrapper">
                         <span className="dashboard-card-title">
                           {card.title}

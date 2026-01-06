@@ -1,4 +1,6 @@
 import React, { useState, useRef } from "react";
+import { FaUserPlus, FaSave, FaEdit, FaRedo } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 import Navbar from "../../compomnents/Navbar";
 import Sidebar from "../../compomnents/Sidebar";
 
@@ -74,7 +76,7 @@ const ClientForm = ({
           <div className="bg-white rounded-lg shadow-lg p-6">
             <section className="form-container" ref={currentFormRef}>
               <h2>
-                <i className="fas fa-user-plus domain-icon" /> Client Details
+                <FaUserPlus className="domain-icon" /> Client Details
               </h2>
 
               <form id="clientForm" onSubmit={handleSubmit}>
@@ -152,7 +154,7 @@ const ClientForm = ({
                   </div>
                 </div>
 
-                {/* Line 3: Address (full width, larger) */}
+                {/* Line 3: Address */}
                 <div className="form-group">
                   <label htmlFor="address" className="required">
                     Address
@@ -178,7 +180,7 @@ const ClientForm = ({
                       className="btn btn-primary"
                       id="saveClientBtn"
                     >
-                      <i className="fas fa-save" /> Save Client
+                      <FaSave /> Save Client
                     </button>
                   )}
 
@@ -188,7 +190,7 @@ const ClientForm = ({
                       className="btn btn-secondary"
                       id="updateClientBtn"
                     >
-                      <i className="fas fa-edit" /> Update Client
+                      <FaEdit /> Update Client
                     </button>
                   )}
 
@@ -198,7 +200,7 @@ const ClientForm = ({
                     id="resetClientBtn"
                     onClick={handleReset}
                   >
-                    <i className="fas fa-redo" /> Reset
+                    <FaRedo /> Reset
                   </button>
                 </div>
               </form>

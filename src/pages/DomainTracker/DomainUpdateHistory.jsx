@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { FaHistory } from "react-icons/fa";
 import Navbar from "../../compomnents/Navbar";
 import Sidebar from "../../compomnents/Sidebar";
 
@@ -63,7 +64,7 @@ const DomainHistory = ({ history = [] }) => {
           <div className="bg-white rounded-lg shadow-lg p-6">
             <div className="table-header">
               <h2>
-                <i className="fas fa-history domain-icon" /> Domain History
+                <FaHistory className="domain-icon" /> Domain History
               </h2>
               <div className="domain-count" id="historyCount">
                 {countText}

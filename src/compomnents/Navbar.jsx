@@ -1,5 +1,6 @@
 // Navbar.jsx
 import React, { useEffect, useRef, useState } from "react";
+import { FaSearch, FaSignOutAlt } from "react-icons/fa";
 import "../assets/css/index.css";
 import Admin from "../assets/images/Admin.avif";
 
@@ -37,9 +38,7 @@ function Navbar() {
         {/* Left: Search */}
         <div className="topbar-left">
           <div className="topbar-search">
-            <span className="material-symbols-outlined topbar-search-icon">
-              search
-            </span>
+            <FaSearch className="topbar-search-icon" />
             <input
               type="search"
               className="topbar-search-input"
@@ -48,7 +47,7 @@ function Navbar() {
           </div>
         </div>
 
-        {/* Right: profile only (you can add language/icons later) */}
+        {/* Right: profile only */}
         <div className="topbar-right">
           <div className="topbar-divider" />
 
@@ -82,9 +81,7 @@ function Navbar() {
                   href={item.href}
                   className="profile-dropdown-item"
                 >
-                  <span className="material-symbols-outlined profile-dropdown-item-icon">
-                    {item.icon}
-                  </span>
+                  <FaSignOutAlt className="profile-dropdown-item-icon" />
                   <span className="profile-dropdown-item-label">
                     {item.label}
                   </span>

@@ -1,4 +1,5 @@
 import React, { useState, useRef } from "react";
+import { FaPlusCircle, FaSave, FaEdit, FaRedo } from "react-icons/fa";
 import Navbar from "../../compomnents/Navbar";
 import Sidebar from "../../compomnents/Sidebar";
 
@@ -86,7 +87,7 @@ const DomainForm = ({
           <div className="bg-white rounded-lg shadow-lg p-6">
             <section className="form-container" ref={currentFormRef}>
               <h2>
-                <i className="fas fa-plus-circle domain-icon" /> Domain Details
+                <FaPlusCircle className="domain-icon" /> Domain Details
               </h2>
 
               <form id="domainForm" onSubmit={handleSubmit}>
@@ -245,7 +246,7 @@ const DomainForm = ({
                       className="btn btn-primary"
                       id="saveBtn"
                     >
-                      <i className="fas fa-save" /> Save Domain
+                      <FaSave /> Save Domain
                     </button>
                   )}
 
@@ -255,7 +256,7 @@ const DomainForm = ({
                       className="btn btn-secondary"
                       id="updateBtn"
                     >
-                      <i className="fas fa-edit" /> Update Domain
+                      <FaEdit /> Update Domain
                     </button>
                   )}
 
@@ -265,7 +266,7 @@ const DomainForm = ({
                     id="resetBtn"
                     onClick={handleReset}
                   >
-                    <i className="fas fa-redo" /> Reset
+                    <FaRedo /> Reset
                   </button>
                 </div>
               </form>

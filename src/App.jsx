@@ -15,13 +15,13 @@ function App() {
       <Route path="/admin-dashboard" element={<AdminDashboard />} />
 
       {/* DOMAIN TRACKER */}
-      <Route path="/new-domain" element={<DomainForm />} />
-      <Route path="/all-domains" element={<DomainDeatils />} />
-      <Route path="/edit-domain" element={<EditDomainPage />} />
-      <Route path="/updated-history" element={<DomainUpdateHistory />} />
+      <Route path="/domain/new" element={<DomainForm />} />
+      <Route path="/domain/all" element={<DomainDeatils />} />
+      <Route path="/domain/update/:id" element={<EditDomainPage />} />
+      <Route path="/domain/history" element={<DomainUpdateHistory />} />
 
       {/* CLIENT */}
-      <Route path="/new-client" element={<ClientForm />} />
+      <Route path="/client/new" element={<ClientForm />} />
     </Routes>
   );
 }

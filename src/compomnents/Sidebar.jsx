@@ -1,54 +1,44 @@
 // Sidebar.jsx
 import React, { useEffect, useState } from "react";
+import {
+  MdLayers,
+  MdDashboard,
+  MdExpandMore,
+  MdPerson,
+  MdChevronLeft,
+  MdChevronRight,
+} from "react-icons/md";
 import "../assets/css/index.css";
 
 const MENU_ITEMS = [
   {
     label: "JRM INFOTECH",
-    icon: "layers",
+    icon: MdLayers,
     children: [
       {
         label: "CLIENT",
-        children: [{ label: "Add Client", href: "/new-client" }],
+        children: [{ label: "Add Client", href: "/client/new" }],
       },
       {
         label: "DOMIAN TRACKER",
         children: [
-          {
-            label: "Add Domain",
-            href: "/new-domain", // grandchild -> href
-          },
-          {
-            label: "All Doamins",
-            href: "/all-domains", // grandchild -> href
-          },
-          {
-            label: "Domain History",
-            href: "/updated-history", // grandchild -> href
-          },
+          { label: "Add Domain", href: "/domain/new" },
+          { label: "All Doamins", href: "/domain/all" },
+          { label: "Domain History", href: "/domain/history" },
         ],
       },
     ],
   },
   {
     label: "APOLLO",
-    icon: "dashboard",
+    icon: MdDashboard,
     children: [
-      {
-        label: "Students Detail",
-        href: "/apollo/students-detail",
-      },
+      { label: "Students Detail", href: "/apollo/students-detail" },
       {
         label: "Domain Tracker",
         children: [
-          {
-            label: "Table",
-            href: "/apollo/domain-tracker",
-          },
-          {
-            label: "Form",
-            href: "/apollo/domain-tracker/form",
-          },
+          { label: "Table", href: "/apollo/domain-tracker" },
+          { label: "Form", href: "/apollo/domain-tracker/form" },
         ],
       },
     ],
@@ -61,7 +51,7 @@ const buildInitialOpenMenus = (items, parentKey = "") => {
   items.forEach((item) => {
     const key = parentKey ? `${parentKey}/${item.label}` : item.label;
     if (item.children && item.children.length) {
-      state[key] = false; // closed by default
+      state[key] = false;
       Object.assign(state, buildInitialOpenMenus(item.children, key));
     }
   });
@@ -92,8 +82,6 @@ function Sidebar() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const currentPath = window.location.pathname;
-
-    // keep same selector & .active logic
     document.querySelectorAll(".sidebar-menu a.menu-link").forEach((el) => {
       if (el.getAttribute("href") === currentPath) {
         el.classList.add("active");
@@ -101,7 +89,6 @@ function Sidebar() {
     });
   }, []);
 
-  // Close all dropdowns when sidebar collapses
   useEffect(() => {
     if (!isExpanded) {
       setOpenMenus((prev) => {
@@ -112,7 +99,6 @@ function Sidebar() {
     }
   }, [isExpanded]);
 
-  // Update CSS variable for sidebar width to adjust navbar and main content
   useEffect(() => {
     const width = isExpanded ? "240px" : "70px";
     document.documentElement.style.setProperty(
@@ -140,14 +126,14 @@ function Sidebar() {
     }));
   };
 
-  // Recursive renderer: keeps same classes / structure
   const renderMenuItems = (items, parentKey = "") =>
     items.map((item) => {
       const hasChildren =
         Array.isArray(item.children) && item.children.length > 0;
       const key = parentKey ? `${parentKey}/${item.label}` : item.label;
       const isOpen = !!openMenus[key];
-      const isTopLevel = !parentKey; // only top-level shows icon
+      const isTopLevel = !parentKey;
+      const Icon = item.icon;
 
       return (
         <li
@@ -155,30 +141,20 @@ function Sidebar() {
           className={"menu-item" + (isOpen ? " menu-item--open" : "")}
         >
           <a
-            // only leaf items (no children) get href -> parent/child have no href
             href={hasChildren ? undefined : item.href}
             className="menu-link"
             onClick={(e) => {
               if (hasChildren) {
-                // toggle submenu, don't navigate
                 e.preventDefault();
                 toggleMenu(key);
               }
             }}
           >
-            {isTopLevel && item.icon && (
-              <span className="menu-icon material-symbols-outlined">
-                {item.icon}
-              </span>
-            )}
+            {isTopLevel && Icon && <Icon className="menu-icon" />}
 
             <span className="menu-text">{item.label}</span>
 
-            {hasChildren ? (
-              <span className="menu-arrow material-symbols-outlined">
-                expand_more
-              </span>
-            ) : null}
+            {hasChildren ? <MdExpandMore className="menu-arrow" /> : null}
           </a>
 
           {hasChildren ? (
@@ -204,21 +180,17 @@ function Sidebar() {
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {/* Logo row */}
       <div className="logo-box">
-        <a href="/" className="logo">
+        <a href="/admin-dashboard" className="logo">
           <span className="logo-icon-circle">
-            <span className="material-symbols-outlined logo-icon-person">
-              person
-            </span>
-          </span>{" "}
+            <MdPerson className="logo-icon-person" />
+          </span>
           <span className="logo-text">
             Admin <br />
             Dashboard
           </span>
         </a>
 
-        {/* Show > or < only when sidebar is expanded (hovered or pinned) */}
         {isExpanded && (
           <button
             type="button"
@@ -228,14 +200,15 @@ function Sidebar() {
             }
             aria-label={isPinned ? "Unpin sidebar" : "Pin sidebar"}
           >
-            <span className="material-symbols-outlined sidebar-pin-icon">
-              {isPinned ? "chevron_left" : "chevron_right"}
-            </span>
+            {isPinned ? (
+              <MdChevronLeft className="sidebar-pin-icon" />
+            ) : (
+              <MdChevronRight className="sidebar-pin-icon" />
+            )}
           </button>
         )}
       </div>
 
-      {/* Menu */}
       <div className="scrollbar">
         <ul className="menu sidebar-menu">{renderMenuItems(MENU_ITEMS)}</ul>
       </div>

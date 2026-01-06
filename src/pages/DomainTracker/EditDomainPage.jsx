@@ -1,6 +1,7 @@
 // src/pages/EditDomainPage.jsx
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { FaEdit, FaArrowLeft } from "react-icons/fa";
 import Navbar from "../../compomnents/Navbar";
 import Sidebar from "../../compomnents/Sidebar";
 
@@ -86,7 +87,7 @@ const EditDomainPage = () => {
           <div className="bg-white rounded-lg shadow-lg p-6">
             <section className="form-container">
               <h2>
-                <i className="fas fa-edit domain-icon" /> Edit Domain - {id}
+                <FaEdit className="domain-icon" /> Edit Domain - {id}
               </h2>
 
               {/* Option buttons (tabs) */}
@@ -128,7 +129,6 @@ const EditDomainPage = () => {
               {/* 1) Update the domain information */}
               {selectedOption === "update-info" && (
                 <form id="domainForm" onSubmit={handleSubmitUpdateInfo}>
-                  {/* Domain name */}
                   <div className="form-group">
                     <label htmlFor="domainName" className="required">
                       Domain Name
@@ -149,7 +149,6 @@ const EditDomainPage = () => {
                     </span>
                   </div>
 
-                  {/* Registrar */}
                   <div className="form-group">
                     <label htmlFor="registrar" className="required">
                       Registrar
@@ -167,7 +166,6 @@ const EditDomainPage = () => {
                     </div>
                   </div>
 
-                  {/* Client Name */}
                   <div className="form-group">
                     <label htmlFor="clientName" className="required">
                       Client Name
@@ -185,7 +183,6 @@ const EditDomainPage = () => {
                     </div>
                   </div>
 
-                  {/* Domain Active Status */}
                   <div className="form-group">
                     <label>Domain Active Status</label>
                     <div className="radio-group">
@@ -212,14 +209,13 @@ const EditDomainPage = () => {
                     </div>
                   </div>
 
-                  {/* Actions: separate button for this form */}
                   <div className="form-actions">
                     <button
                       type="submit"
                       className="btn btn-secondary"
                       id="updateInfoBtn"
                     >
-                      <i className="fas fa-edit" /> Update Domain Information
+                      <FaEdit /> Update Domain Information
                     </button>
                   </div>
                 </form>
@@ -252,7 +248,6 @@ const EditDomainPage = () => {
                         type="date"
                         id="expiryDate"
                         name="expiryDate"
-                        // Make sure expiry is not before purchase date
                         min={formData.purchaseDate || minPurchaseDate}
                         value={formData.expiryDate}
                         onChange={handleChange}
@@ -261,14 +256,13 @@ const EditDomainPage = () => {
                     </div>
                   </div>
 
-                  {/* Actions: separate button for this form */}
                   <div className="form-actions">
                     <button
                       type="submit"
                       className="btn btn-secondary"
                       id="updateDomainPlanBtn"
                     >
-                      <i className="fas fa-edit" /> Update Domain Plan
+                      <FaEdit /> Update Domain Plan
                     </button>
                   </div>
                 </form>
@@ -277,7 +271,6 @@ const EditDomainPage = () => {
               {/* 3) Upgrade SSH Plan */}
               {selectedOption === "upgrade-ssh" && (
                 <form id="domainForm" onSubmit={handleSubmitSSHPlan}>
-                  {/* SSH Name */}
                   <div className="form-group">
                     <label htmlFor="sshName" className="required">
                       SSH Name
@@ -295,7 +288,6 @@ const EditDomainPage = () => {
                     </div>
                   </div>
 
-                  {/* SSH dates */}
                   <div className="form-group date-group">
                     <div>
                       <label htmlFor="sshPurchaseDate" className="required">
@@ -328,27 +320,25 @@ const EditDomainPage = () => {
                     </div>
                   </div>
 
-                  {/* Actions: separate button for this form */}
                   <div className="form-actions">
                     <button
                       type="submit"
                       className="btn btn-secondary"
                       id="updateSSHPlanBtn"
                     >
-                      <i className="fas fa-edit" /> Update SSH Plan
+                      <FaEdit /> Update SSH Plan
                     </button>
                   </div>
                 </form>
               )}
 
-              {/* Optional: back button under the forms */}
               <div style={{ marginTop: "1.5rem" }}>
                 <button
                   type="button"
                   className="btn btn-back"
                   onClick={() => navigate(-1)}
                 >
-                  <i className="fas fa-arrow-left" /> Back to Domains
+                  <FaArrowLeft /> Back to Domains
                 </button>
               </div>
             </section>
