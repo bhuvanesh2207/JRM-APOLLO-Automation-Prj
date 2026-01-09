@@ -1,46 +1,48 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FaHistory } from "react-icons/fa";
 import Navbar from "../../compomnents/Navbar";
 import Sidebar from "../../compomnents/Sidebar";
+import api from "../../api/axios";
 
-// DUMMY HISTORY DATA
-const dummyHistory = [
-  {
-    id: "hist-1",
-    domainName: "example.com",
-    registrar: "GoDaddy",
-    updatedAt: "2025-01-05", // YYYY-MM-DD
-    changes: "Updated Domain expiry date",
-  },
-  {
-    id: "hist-2",
-    domainName: "example.com",
-    registrar: "GoDaddy",
-    updatedAt: "2025-01-02",
-    changes: "Changed domain name",
-  },
-  {
-    id: "hist-3",
-    domainName: "mydomain.net",
-    registrar: "Namecheap",
-    updatedAt: "2024-06-15",
-    changes: "Updated ssh expiry date",
-  },
-];
-
-const DomainHistory = ({ history = [] }) => {
-  // Use real history if provided, otherwise dummy
-  const dataToRender = history.length ? history : dummyHistory;
+const DomainHistory = () => {
+  const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const [searchDomain, setSearchDomain] = useState("");
   const [searchDate, setSearchDate] = useState("");
 
-  const filteredHistory = dataToRender.filter((item) => {
+  // ---------- Fetch history from API ----------
+  const fetchHistory = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await api.get("/api/domain/history/"); // fetch all history
+      if (res.data.success) {
+        setHistory(res.data.history || []);
+      } else {
+        setError("Failed to fetch history.");
+      }
+    } catch (err) {
+      setError("Server error while fetching history.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchHistory();
+  }, []);
+
+  // ---------- Filtered history based on search ----------
+  const filteredHistory = history.filter((item) => {
     const domainMatch = searchDomain
       ? item.domainName.toLowerCase().includes(searchDomain.toLowerCase())
       : true;
 
-    const dateMatch = searchDate ? item.updatedAt === searchDate : true;
+    const dateMatch = searchDate
+      ? item.updated_at.slice(0, 10) === searchDate // comparing YYYY-MM-DD
+      : true;
 
     return domainMatch && dateMatch;
   });
@@ -116,27 +118,28 @@ const DomainHistory = ({ history = [] }) => {
               </div>
             </div>
 
-            <div className="table-responsive">
-              <table id="domainHistoryTable">
-                <thead>
-                  <tr>
-                    <th>Domain Name</th>
-                    <th>Registrar</th>
-                    <th>Updated</th>
-                    <th>What Was Updated</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredHistory.length === 0 ? (
+            {/* History Table */}
+            {loading ? (
+              <div>Loading history...</div>
+            ) : error ? (
+              <div className="text-red-600">{error}</div>
+            ) : filteredHistory.length === 0 ? (
+              <div>No history records found.</div>
+            ) : (
+              <div className="table-responsive">
+                <table id="domainHistoryTable">
+                  <thead>
                     <tr>
-                      <td colSpan={4} style={{ textAlign: "center" }}>
-                        No history records found.
-                      </td>
+                      <th>Domain Name</th>
+                      <th>Registrar</th>
+                      <th>Updated</th>
+                      <th>What Was Updated</th>
                     </tr>
-                  ) : (
-                    filteredHistory.map((record) => {
-                      const updatedDisplay = record.updatedAt
-                        ? new Date(record.updatedAt).toLocaleDateString(
+                  </thead>
+                  <tbody>
+                    {filteredHistory.map((record) => {
+                      const updatedDisplay = record.updated_at
+                        ? new Date(record.updated_at).toLocaleDateString(
                             "en-US",
                             {
                               year: "numeric",
@@ -154,11 +157,11 @@ const DomainHistory = ({ history = [] }) => {
                           <td>{record.changes}</td>
                         </tr>
                       );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       </main>

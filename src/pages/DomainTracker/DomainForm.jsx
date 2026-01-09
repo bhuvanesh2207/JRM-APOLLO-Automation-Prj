@@ -1,26 +1,22 @@
-import React, { useState, useRef } from "react";
-import { FaPlusCircle, FaSave, FaEdit, FaRedo } from "react-icons/fa";
+// src/pages/DomainForm.jsx
+import React, { useState, useRef, useEffect } from "react";
+import { FaPlusCircle, FaSave, FaRedo } from "react-icons/fa";
 import Navbar from "../../compomnents/Navbar";
 import Sidebar from "../../compomnents/Sidebar";
+import api from "../../api/axios";
 
-const DomainForm = ({
-  formRef,
-  formData: propFormData,
-  editMode = false,
-  purchaseMin,
-  todayStr,
-  onChange: propOnChange,
-  onSubmit: propOnSubmit,
-  onReset: propOnReset,
-}) => {
-  const internalFormRef = useRef(null);
-  const currentFormRef = formRef || internalFormRef;
+const DomainForm = () => {
+  const formRef = useRef(null);
 
   const today = new Date();
-  const minPurchaseDate = purchaseMin || "2000-01-01";
-  const maxPurchaseDate = todayStr || today.toISOString().split("T")[0];
+  const minPurchaseDate = "2000-01-01";
+  const maxPurchaseDate = today.toISOString().split("T")[0];
 
-  const [internalFormData, setInternalFormData] = useState({
+  // ✅ Clients from API
+  const [clients, setClients] = useState([]);
+
+  const [formData, setFormData] = useState({
+    clientName: "",
     domainName: "",
     registrar: "",
     purchaseDate: "",
@@ -31,47 +27,134 @@ const DomainForm = ({
     sshExpiryDate: "",
   });
 
-  const currentFormData = propFormData || internalFormData;
+  const [errors, setErrors] = useState({});
 
+  // --------- FETCH CLIENT NAMES ---------
+  useEffect(() => {
+    const fetchClients = async () => {
+      try {
+        const res = await api.get("/api/client/names/");
+        setClients(res.data.clients);
+      } catch (err) {
+        console.error("Failed to fetch clients", err);
+      }
+    };
+
+    fetchClients();
+  }, []);
+
+  // --------- HANDLERS ---------
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (propOnChange) {
-      propOnChange(e);
-    } else {
-      setInternalFormData((prev) => ({
-        ...prev,
-        [name]: value,
-      }));
-    }
-  };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (propOnSubmit) {
-      propOnSubmit(e);
-    } else {
-      // Default submit behavior - could add logic here
-      console.log("Form submitted:", currentFormData);
-      alert("Domain saved successfully!");
-    }
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
+    setErrors((prev) => ({
+      ...prev,
+      [name]: "",
+    }));
   };
 
   const handleReset = () => {
-    if (propOnReset) {
-      propOnReset();
-    } else {
-      setInternalFormData({
-        domainName: "",
-        registrar: "",
-        purchaseDate: "",
-        expiryDate: "",
-        activeStatus: "active",
-        sshName: "",
-        sshPurchaseDate: "",
-        sshExpiryDate: "",
-      });
+    setFormData({
+      clientName: "",
+      domainName: "",
+      registrar: "",
+      purchaseDate: "",
+      expiryDate: "",
+      activeStatus: "active",
+      sshName: "",
+      sshPurchaseDate: "",
+      sshExpiryDate: "",
+    });
+    setErrors({});
+  };
+
+  // --------- VALIDATION ---------
+  const validateForm = () => {
+    const newErrors = {};
+    const {
+      clientName,
+      domainName,
+      registrar,
+      purchaseDate,
+      expiryDate,
+      sshName,
+      sshPurchaseDate,
+      sshExpiryDate,
+    } = formData;
+
+    const domainRegex =
+      /^(?!https?:\/\/)(?!www\.)[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*\.[a-zA-Z]{2,}$/;
+
+    if (!clientName) newErrors.clientName = "Client is required.";
+
+    if (!domainName.trim()) {
+      newErrors.domainName = "Domain name is required.";
+    } else if (!domainRegex.test(domainName.trim())) {
+      newErrors.domainName = "Enter a valid domain (example: example.com).";
+    }
+
+    if (!registrar.trim()) newErrors.registrar = "Registrar is required.";
+    if (!purchaseDate) newErrors.purchaseDate = "Purchase date is required.";
+    if (!expiryDate) newErrors.expiryDate = "Expiry date is required.";
+
+    if (purchaseDate && expiryDate) {
+      if (new Date(expiryDate) <= new Date(purchaseDate)) {
+        newErrors.expiryDate =
+          "Domain expiry date must be after purchase date.";
+      }
+    }
+
+    // SSH (optional)
+    if (sshName.trim()) {
+      if (!sshPurchaseDate)
+        newErrors.sshPurchaseDate = "SSH purchase date is required.";
+      if (!sshExpiryDate)
+        newErrors.sshExpiryDate = "SSH expiry date is required.";
+
+      if (sshPurchaseDate && sshExpiryDate) {
+        if (new Date(sshExpiryDate) <= new Date(sshPurchaseDate)) {
+          newErrors.sshExpiryDate =
+            "SSH expiry date must be after purchase date.";
+        }
+      }
+    }
+
+    return newErrors;
+  };
+
+  const focusFirstError = (errorsObj) => {
+    const firstField = Object.keys(errorsObj)[0];
+    if (!firstField || !formRef.current) return;
+
+    const el = formRef.current.querySelector(`[name="${firstField}"]`);
+    if (el) el.focus();
+  };
+
+  // --------- SUBMIT ---------
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const validationErrors = validateForm();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      focusFirstError(validationErrors);
+      return;
+    }
+
+    try {
+      await api.post("/api/domain/add/", formData);
+      alert("Domain added successfully");
+      handleReset();
+    } catch (err) {
+      alert(err.response?.data?.error || "Server error");
     }
   };
+
   return (
     <div
       className="min-h-screen"
@@ -82,188 +165,152 @@ const DomainForm = ({
     >
       <Sidebar />
       <Navbar />
+
       <main className="app-main">
         <div className="max-w-[1200px] mx-auto px-5 mt-6">
           <div className="bg-white rounded-lg shadow-lg p-6">
-            <section className="form-container" ref={currentFormRef}>
+            <section className="form-container" ref={formRef}>
               <h2>
                 <FaPlusCircle className="domain-icon" /> Domain Details
               </h2>
 
-              <form id="domainForm" onSubmit={handleSubmit}>
-                {/* Domain name */}
+              <form onSubmit={handleSubmit} noValidate>
+                {/* Client */}
                 <div className="form-group">
-                  <label htmlFor="domainName" className="required">
-                    Domain Name
-                  </label>
-                  <div className="input-with-icon">
-                    <input
-                      type="text"
-                      id="domainName"
-                      name="domainName"
-                      placeholder="example.com"
-                      value={currentFormData.domainName}
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-                  <span className="form-note">
-                    Enter domain without http:// or https://
-                  </span>
+                  <label className="required">Client</label>
+                  <select
+                    name="clientName"
+                    value={formData.clientName}
+                    onChange={handleChange}
+                  >
+                    <option value="">-- Select Client --</option>
+                    {clients.map((client) => (
+                      <option key={client.id} value={client.name}>
+                        {client.name}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.clientName && (
+                    <p className="error-message">{errors.clientName}</p>
+                  )}
+                </div>
+
+                {/* Domain */}
+                <div className="form-group">
+                  <label className="required">Domain Name</label>
+                  <input
+                    type="text"
+                    name="domainName"
+                    placeholder="example.com"
+                    value={formData.domainName}
+                    onChange={handleChange}
+                  />
+                  {errors.domainName && (
+                    <p className="error-message">{errors.domainName}</p>
+                  )}
                 </div>
 
                 {/* Registrar */}
                 <div className="form-group">
-                  <label htmlFor="registrar" className="required">
-                    Registrar
-                  </label>
-                  <div className="input-with-icon">
-                    <input
-                      type="text"
-                      id="registrar"
-                      name="registrar"
-                      placeholder="GoDaddy, Namecheap, etc."
-                      value={currentFormData.registrar}
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
+                  <label className="required">Registrar</label>
+                  <input
+                    type="text"
+                    name="registrar"
+                    value={formData.registrar}
+                    onChange={handleChange}
+                  />
+                  {errors.registrar && (
+                    <p className="error-message">{errors.registrar}</p>
+                  )}
                 </div>
 
-                {/* Domain dates */}
+                {/* Domain Dates */}
                 <div className="form-group date-group">
                   <div>
-                    <label htmlFor="purchaseDate" className="required">
-                      Domain Purchase Date
-                    </label>
+                    <label className="required">Purchase Date</label>
                     <input
                       type="date"
-                      id="purchaseDate"
                       name="purchaseDate"
                       min={minPurchaseDate}
                       max={maxPurchaseDate}
-                      value={currentFormData.purchaseDate}
+                      value={formData.purchaseDate}
                       onChange={handleChange}
-                      required
                     />
+                    {errors.purchaseDate && (
+                      <p className="error-message">{errors.purchaseDate}</p>
+                    )}
                   </div>
+
                   <div>
-                    <label htmlFor="expiryDate" className="required">
-                      Domain Expiry Date
-                    </label>
+                    <label className="required">Expiry Date</label>
                     <input
                       type="date"
-                      id="expiryDate"
                       name="expiryDate"
-                      min={maxPurchaseDate}
-                      value={currentFormData.expiryDate}
+                      min={formData.purchaseDate || minPurchaseDate}
+                      value={formData.expiryDate}
                       onChange={handleChange}
-                      required
                     />
+                    {errors.expiryDate && (
+                      <p className="error-message">{errors.expiryDate}</p>
+                    )}
                   </div>
                 </div>
 
-                {/* Active / Inactive status */}
-                <div className="form-group">
-                  <label>Domain Active Status</label>
-                  <div className="radio-group">
-                    <label className="radio-option">
-                      <input
-                        type="radio"
-                        name="activeStatus"
-                        value="active"
-                        checked={currentFormData.activeStatus === "active"}
-                        onChange={handleChange}
-                      />
-                      Active
-                    </label>
-                    <label className="radio-option">
-                      <input
-                        type="radio"
-                        name="activeStatus"
-                        value="inactive"
-                        checked={currentFormData.activeStatus === "inactive"}
-                        onChange={handleChange}
-                      />
-                      Inactive
-                    </label>
-                  </div>
-                </div>
+                {/* SSH Details */}
+                <h3 className="section-title mt-6">SSH Details (Optional)</h3>
 
-                {/* SSH (optional) */}
                 <div className="form-group">
-                  <label htmlFor="sshName">SSH (optional)</label>
-                  <div className="input-with-icon">
-                    <input
-                      type="text"
-                      id="sshName"
-                      name="sshName"
-                      placeholder="SSH name / identifier"
-                      value={currentFormData.sshName}
-                      onChange={handleChange}
-                    />
-                  </div>
-                  <span className="form-note">
-                    Leave blank if this domain has no SSH subscription.
-                  </span>
+                  <label>SSH Name</label>
+                  <input
+                    type="text"
+                    name="sshName"
+                    placeholder="e.g. DigitalOcean SSH"
+                    value={formData.sshName}
+                    onChange={handleChange}
+                  />
                 </div>
 
                 <div className="form-group date-group">
                   <div>
-                    <label htmlFor="sshPurchaseDate">
-                      SSH Purchase Date (optional)
-                    </label>
+                    <label>SSH Purchase Date</label>
                     <input
                       type="date"
-                      id="sshPurchaseDate"
                       name="sshPurchaseDate"
                       min={minPurchaseDate}
                       max={maxPurchaseDate}
-                      value={currentFormData.sshPurchaseDate}
+                      value={formData.sshPurchaseDate}
                       onChange={handleChange}
+                      disabled={!formData.sshName}
                     />
+                    {errors.sshPurchaseDate && (
+                      <p className="error-message">{errors.sshPurchaseDate}</p>
+                    )}
                   </div>
+
                   <div>
-                    <label htmlFor="sshExpiryDate">
-                      SSH Expiry Date (optional)
-                    </label>
+                    <label>SSH Expiry Date</label>
                     <input
                       type="date"
-                      id="sshExpiryDate"
                       name="sshExpiryDate"
-                      min={maxPurchaseDate}
-                      value={currentFormData.sshExpiryDate}
+                      min={formData.sshPurchaseDate || minPurchaseDate}
+                      value={formData.sshExpiryDate}
                       onChange={handleChange}
+                      disabled={!formData.sshName}
                     />
+                    {errors.sshExpiryDate && (
+                      <p className="error-message">{errors.sshExpiryDate}</p>
+                    )}
                   </div>
                 </div>
 
                 {/* Actions */}
                 <div className="form-actions">
-                  {!editMode && (
-                    <button
-                      type="submit"
-                      className="btn btn-primary"
-                      id="saveBtn"
-                    >
-                      <FaSave /> Save Domain
-                    </button>
-                  )}
-
-                  {editMode && (
-                    <button
-                      type="submit"
-                      className="btn btn-secondary"
-                      id="updateBtn"
-                    >
-                      <FaEdit /> Update Domain
-                    </button>
-                  )}
-
+                  <button type="submit" className="btn btn-primary">
+                    <FaSave /> Save Domain
+                  </button>
                   <button
                     type="button"
                     className="btn btn-secondary"
-                    id="resetBtn"
                     onClick={handleReset}
                   >
                     <FaRedo /> Reset

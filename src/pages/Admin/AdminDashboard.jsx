@@ -1,22 +1,22 @@
 // AdminDashboard.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Navbar from "../compomnents/Navbar";
-import Sidebar from "../compomnents/Sidebar";
-import Footer from "../compomnents/Footer";
+import Navbar from "../../compomnents/Navbar";
+import Sidebar from "../../compomnents/Sidebar";
+import Footer from "../../compomnents/Footer";
 
 // Example images – replace with your real file paths
-import BannerImage from "../assets/images/Automation.jpg";
+import BannerImage from "../../assets/images/Automation.jpg";
 
 // JRM card images
-import JrmImg1 from "../assets/images/DomainTraker.avif";
-import JrmImg2 from "../assets/images/DomainTraker.avif";
-import JrmImg3 from "../assets/images/DomainTraker.avif";
+import JrmImg1 from "../../assets/images/DomainTraker.avif";
+import JrmImg2 from "../../assets/images/DomainTraker.avif";
+import JrmImg3 from "../../assets/images/DomainTraker.avif";
 
 // Apollo card images
-import ApolloImg1 from "../assets/images/DomainTraker.avif";
-import ApolloImg2 from "../assets/images/DomainTraker.avif";
-import ApolloImg3 from "../assets/images/DomainTraker.avif";
+import ApolloImg1 from "../../assets/images/DomainTraker.avif";
+import ApolloImg2 from "../../assets/images/DomainTraker.avif";
+import ApolloImg3 from "../../assets/images/DomainTraker.avif";
 
 // change their titles / images.
 const CARD_DATA = {

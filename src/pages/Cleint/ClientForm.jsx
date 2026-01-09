@@ -1,21 +1,13 @@
 import React, { useState, useRef } from "react";
-import { FaUserPlus, FaSave, FaEdit, FaRedo } from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
+import { FaPlusCircle, FaSave, FaEdit, FaRedo } from "react-icons/fa";
 import Navbar from "../../compomnents/Navbar";
 import Sidebar from "../../compomnents/Sidebar";
+import api from "../../api/axios";
 
-const ClientForm = ({
-  formRef,
-  formData: propFormData,
-  editMode = false,
-  onChange: propOnChange,
-  onSubmit: propOnSubmit,
-  onReset: propOnReset,
-}) => {
-  const internalFormRef = useRef(null);
-  const currentFormRef = formRef || internalFormRef;
+const ClientForm = ({ editMode = false }) => {
+  const formRef = useRef(null);
 
-  const [internalFormData, setInternalFormData] = useState({
+  const [formData, setFormData] = useState({
     name: "",
     contact: "",
     email: "",
@@ -23,42 +15,51 @@ const ClientForm = ({
     address: "",
   });
 
-  const currentFormData = propFormData || internalFormData;
-
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (propOnChange) {
-      propOnChange(e);
-    } else {
-      setInternalFormData((prev) => ({
-        ...prev,
-        [name]: value,
-      }));
-    }
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (propOnSubmit) {
-      propOnSubmit(e);
-    } else {
-      console.log("Client form submitted:", currentFormData);
-      alert("Client saved successfully!");
-    }
-  };
 
-  const handleReset = () => {
-    if (propOnReset) {
-      propOnReset();
-    } else {
-      setInternalFormData({
+    try {
+      const payload = {
+        name: formData.name,
+        contact: formData.contact,
+        email: formData.email,
+        company_name: formData.companyName, // ✅ FIX
+        address: formData.address,
+      };
+
+      await api.post("/api/client/add/", payload);
+
+      alert("Client created successfully");
+
+      setFormData({
         name: "",
         contact: "",
         email: "",
         companyName: "",
         address: "",
       });
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.error || "Failed to create client");
     }
+  };
+
+  const handleReset = () => {
+    setFormData({
+      name: "",
+      contact: "",
+      email: "",
+      companyName: "",
+      address: "",
+    });
   };
 
   return (
@@ -71,133 +72,86 @@ const ClientForm = ({
     >
       <Sidebar />
       <Navbar />
+
       <main className="app-main">
         <div className="max-w-[1200px] mx-auto px-5 mt-6">
           <div className="bg-white rounded-lg shadow-lg p-6">
-            <section className="form-container" ref={currentFormRef}>
+            <section className="form-container" ref={formRef}>
               <h2>
-                <FaUserPlus className="domain-icon" /> Client Details
+                <FaPlusCircle className="domain-icon" /> Client Details
               </h2>
 
-              <form id="clientForm" onSubmit={handleSubmit}>
-                {/* Line 1: Name, Company Name */}
+              <form onSubmit={handleSubmit}>
+                {/* Line 1 */}
                 <div className="form-group date-group">
                   <div>
-                    <label htmlFor="name" className="required">
-                      Name
-                    </label>
-                    <div className="input-with-icon">
-                      <input
-                        type="text"
-                        id="name"
-                        name="name"
-                        placeholder="Client name"
-                        value={currentFormData.name}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label htmlFor="companyName" className="required">
-                      Company Name
-                    </label>
-                    <div className="input-with-icon">
-                      <input
-                        type="text"
-                        id="companyName"
-                        name="companyName"
-                        placeholder="Company name"
-                        value={currentFormData.companyName}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Line 2: Contact, Email */}
-                <div className="form-group date-group">
-                  <div>
-                    <label htmlFor="contact" className="required">
-                      Contact
-                    </label>
-                    <div className="input-with-icon">
-                      <input
-                        type="text"
-                        id="contact"
-                        name="contact"
-                        placeholder="Phone number"
-                        value={currentFormData.contact}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label htmlFor="email" className="required">
-                      Email
-                    </label>
-                    <div className="input-with-icon">
-                      <input
-                        type="email"
-                        id="email"
-                        name="email"
-                        placeholder="client@example.com"
-                        value={currentFormData.email}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Line 3: Address */}
-                <div className="form-group">
-                  <label htmlFor="address" className="required">
-                    Address
-                  </label>
-                  <div className="input-with-icon address-input">
-                    <textarea
-                      id="address"
-                      name="address"
-                      placeholder="Full address"
-                      value={currentFormData.address}
+                    <label className="required">Name</label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={formData.name}
                       onChange={handleChange}
-                      className="address-textarea"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="required">Company Name</label>
+                    <input
+                      type="text"
+                      name="companyName"
+                      value={formData.companyName}
+                      onChange={handleChange}
                       required
                     />
                   </div>
                 </div>
 
+                {/* Line 2 */}
+                <div className="form-group date-group">
+                  <div>
+                    <label className="required">Contact</label>
+                    <input
+                      type="text"
+                      name="contact"
+                      value={formData.contact}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="required">Email</label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Address */}
+                <div className="form-group">
+                  <label className="required">Address</label>
+                  <textarea
+                    name="address"
+                    value={formData.address}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+
                 {/* Actions */}
                 <div className="form-actions">
-                  {!editMode && (
-                    <button
-                      type="submit"
-                      className="btn btn-primary"
-                      id="saveClientBtn"
-                    >
-                      <FaSave /> Save Client
-                    </button>
-                  )}
-
-                  {editMode && (
-                    <button
-                      type="submit"
-                      className="btn btn-secondary"
-                      id="updateClientBtn"
-                    >
-                      <FaEdit /> Update Client
-                    </button>
-                  )}
+                  <button type="submit" className="btn btn-primary">
+                    <FaSave /> Save Client
+                  </button>
 
                   <button
                     type="button"
                     className="btn btn-secondary"
-                    id="resetClientBtn"
                     onClick={handleReset}
                   >
                     <FaRedo /> Reset

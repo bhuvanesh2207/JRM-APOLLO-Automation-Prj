@@ -1,12 +1,12 @@
-// src/pages/EditDomainPage.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { FaEdit, FaArrowLeft } from "react-icons/fa";
 import Navbar from "../../compomnents/Navbar";
 import Sidebar from "../../compomnents/Sidebar";
+import api from "../../api/axios";
 
 const EditDomainPage = () => {
-  const { id } = useParams(); // domain id from URL
+  const { id } = useParams();
   const navigate = useNavigate();
 
   const today = new Date();
@@ -14,62 +14,106 @@ const EditDomainPage = () => {
   const maxPurchaseDate = today.toISOString().split("T")[0];
 
   const [selectedOption, setSelectedOption] = useState("update-info");
-
   const [formData, setFormData] = useState({
-    // Update domain information
     domainName: "",
     registrar: "",
     clientName: "",
     activeStatus: "active",
-
-    // Upgrade domain plan
     purchaseDate: "",
     expiryDate: "",
-
-    // Upgrade SSH plan
     sshName: "",
     sshPurchaseDate: "",
     sshExpiryDate: "",
   });
 
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  // --------- Fetch Domain Details ---------
+  const fetchDomainDetails = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get(`/api/domain/get/${id}/`);
+      const data = res.data;
+
+      setFormData({
+        domainName: data.domain_name || "",
+        registrar: data.registrar || "",
+        clientName: data.client_name || "",
+        activeStatus: data.active_status ? "active" : "inactive",
+        purchaseDate: data.purchase_date || "",
+        expiryDate: data.expiry_date || "",
+        sshName: data.ssh_name || "",
+        sshPurchaseDate: data.ssh_purchase_date || "",
+        sshExpiryDate: data.ssh_expiry_date || "",
+      });
+    } catch (err) {
+      setError("Failed to fetch domain details.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDomainDetails();
+  }, [id]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Submit handlers for each form
-  const handleSubmitUpdateInfo = (e) => {
+  // --------- Submit Handlers ---------
+  const handleSubmitUpdateInfo = async (e) => {
     e.preventDefault();
-    console.log("Update domain information for:", id, {
-      domainName: formData.domainName,
-      registrar: formData.registrar,
-      clientName: formData.clientName,
-      activeStatus: formData.activeStatus,
-    });
-    alert("Domain information updated successfully!");
+    try {
+      const payload = {
+        domain_name: formData.domainName,
+        registrar: formData.registrar,
+        client_name: formData.clientName,
+        active_status: formData.activeStatus,
+        changes_message: "Updated domain information",
+      };
+      const res = await api.patch(`/api/domain/update/${id}/`, payload);
+      alert(res.data.message || "Domain information updated!");
+    } catch {
+      alert("Server error. Could not update domain info.");
+    }
   };
 
-  const handleSubmitDomainPlan = (e) => {
+  const handleSubmitDomainPlan = async (e) => {
     e.preventDefault();
-    console.log("Upgrade domain plan for:", id, {
-      purchaseDate: formData.purchaseDate,
-      expiryDate: formData.expiryDate,
-    });
-    alert("Domain plan updated successfully!");
+    try {
+      const payload = {
+        purchase_date: formData.purchaseDate,
+        expiry_date: formData.expiryDate,
+        changes_message: "Updated domain plan",
+      };
+      const res = await api.patch(`/api/domain/update/${id}/`, payload);
+      alert(res.data.message || "Domain plan updated!");
+    } catch {
+      alert("Server error. Could not update domain plan.");
+    }
   };
 
-  const handleSubmitSSHPlan = (e) => {
+  const handleSubmitSSHPlan = async (e) => {
     e.preventDefault();
-    console.log("Upgrade SSH plan for:", id, {
-      sshName: formData.sshName,
-      sshPurchaseDate: formData.sshPurchaseDate,
-      sshExpiryDate: formData.sshExpiryDate,
-    });
-    alert("SSH plan updated successfully!");
+    try {
+      const payload = {
+        ssh_name: formData.sshName,
+        ssh_purchase_date: formData.sshPurchaseDate,
+        ssh_expiry_date: formData.sshExpiryDate,
+        changes_message: "Updated SSH plan",
+      };
+      const res = await api.patch(`/api/domain/update/${id}/`, payload);
+      alert(res.data.message || "SSH plan updated!");
+    } catch {
+      alert("Server error. Could not update SSH plan.");
+    }
   };
+
+  if (loading) return <div>Loading domain details...</div>;
+  if (error) return <div className="text-red-600">{error}</div>;
 
   return (
     <div
@@ -81,7 +125,6 @@ const EditDomainPage = () => {
     >
       <Sidebar />
       <Navbar />
-
       <main className="app-main">
         <div className="max-w-[1200px] mx-auto px-5 mt-6">
           <div className="bg-white rounded-lg shadow-lg p-6">
@@ -90,7 +133,7 @@ const EditDomainPage = () => {
                 <FaEdit className="domain-icon" /> Edit Domain - {id}
               </h2>
 
-              {/* Option buttons (tabs) */}
+              {/* Tabs */}
               <div
                 className="form-group"
                 style={{
@@ -106,241 +149,163 @@ const EditDomainPage = () => {
                   className="btn btn-outline"
                   onClick={() => setSelectedOption("update-info")}
                 >
-                  Update the domain information
+                  Update domain info
                 </button>
-
                 <button
                   type="button"
                   className="btn btn-outline"
                   onClick={() => setSelectedOption("upgrade-domain")}
                 >
-                  Upgrade the domain plan
+                  Upgrade domain plan
                 </button>
-
                 <button
                   type="button"
                   className="btn btn-outline"
                   onClick={() => setSelectedOption("upgrade-ssh")}
                 >
-                  Upgrade the SSH plan
+                  Upgrade SSH plan
                 </button>
               </div>
 
-              {/* 1) Update the domain information */}
+              {/* Forms */}
               {selectedOption === "update-info" && (
-                <form id="domainForm" onSubmit={handleSubmitUpdateInfo}>
+                <form onSubmit={handleSubmitUpdateInfo}>
                   <div className="form-group">
-                    <label htmlFor="domainName" className="required">
-                      Domain Name
-                    </label>
-                    <div className="input-with-icon">
-                      <input
-                        type="text"
-                        id="domainName"
-                        name="domainName"
-                        placeholder="example.com"
-                        value={formData.domainName}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
-                    <span className="form-note">
-                      Enter domain without http:// or https://
-                    </span>
+                    <label>Domain Name</label>
+                    <input
+                      name="domainName"
+                      value={formData.domainName}
+                      onChange={handleChange}
+                      required
+                    />
                   </div>
-
                   <div className="form-group">
-                    <label htmlFor="registrar" className="required">
-                      Registrar
-                    </label>
-                    <div className="input-with-icon">
-                      <input
-                        type="text"
-                        id="registrar"
-                        name="registrar"
-                        placeholder="GoDaddy, Namecheap, etc."
-                        value={formData.registrar}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
+                    <label>Registrar</label>
+                    <input
+                      name="registrar"
+                      value={formData.registrar}
+                      onChange={handleChange}
+                      required
+                    />
                   </div>
-
                   <div className="form-group">
-                    <label htmlFor="clientName" className="required">
-                      Client Name
-                    </label>
-                    <div className="input-with-icon">
-                      <input
-                        type="text"
-                        id="clientName"
-                        name="clientName"
-                        placeholder="Client name"
-                        value={formData.clientName}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
+                    <label>Client Name</label>
+                    <input
+                      name="clientName"
+                      value={formData.clientName}
+                      onChange={handleChange}
+                      required
+                    />
                   </div>
-
                   <div className="form-group">
-                    <label>Domain Active Status</label>
-                    <div className="radio-group">
-                      <label className="radio-option">
+                    <label>Status</label>
+                    <div>
+                      <label>
                         <input
                           type="radio"
                           name="activeStatus"
                           value="active"
                           checked={formData.activeStatus === "active"}
                           onChange={handleChange}
-                        />
+                        />{" "}
                         Active
                       </label>
-                      <label className="radio-option">
+                      <label>
                         <input
                           type="radio"
                           name="activeStatus"
                           value="inactive"
                           checked={formData.activeStatus === "inactive"}
                           onChange={handleChange}
-                        />
+                        />{" "}
                         Inactive
                       </label>
                     </div>
                   </div>
-
-                  <div className="form-actions">
-                    <button
-                      type="submit"
-                      className="btn btn-secondary"
-                      id="updateInfoBtn"
-                    >
-                      <FaEdit /> Update Domain Information
-                    </button>
-                  </div>
+                  <button type="submit" className="btn btn-secondary">
+                    <FaEdit /> Update Info
+                  </button>
                 </form>
               )}
 
-              {/* 2) Upgrade Domain Plan */}
               {selectedOption === "upgrade-domain" && (
-                <form id="domainForm" onSubmit={handleSubmitDomainPlan}>
-                  <div className="form-group date-group">
-                    <div>
-                      <label htmlFor="purchaseDate" className="required">
-                        Domain Purchase Date
-                      </label>
-                      <input
-                        type="date"
-                        id="purchaseDate"
-                        name="purchaseDate"
-                        min={minPurchaseDate}
-                        max={maxPurchaseDate}
-                        value={formData.purchaseDate}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="expiryDate" className="required">
-                        Domain Expiry Date
-                      </label>
-                      <input
-                        type="date"
-                        id="expiryDate"
-                        name="expiryDate"
-                        min={formData.purchaseDate || minPurchaseDate}
-                        value={formData.expiryDate}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="form-actions">
-                    <button
-                      type="submit"
-                      className="btn btn-secondary"
-                      id="updateDomainPlanBtn"
-                    >
-                      <FaEdit /> Update Domain Plan
-                    </button>
-                  </div>
-                </form>
-              )}
-
-              {/* 3) Upgrade SSH Plan */}
-              {selectedOption === "upgrade-ssh" && (
-                <form id="domainForm" onSubmit={handleSubmitSSHPlan}>
+                <form onSubmit={handleSubmitDomainPlan}>
                   <div className="form-group">
-                    <label htmlFor="sshName" className="required">
-                      SSH Name
-                    </label>
-                    <div className="input-with-icon">
-                      <input
-                        type="text"
-                        id="sshName"
-                        name="sshName"
-                        placeholder="SSH name / identifier"
-                        value={formData.sshName}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
+                    <label>Purchase Date</label>
+                    <input
+                      type="date"
+                      name="purchaseDate"
+                      min={minPurchaseDate}
+                      max={maxPurchaseDate}
+                      value={formData.purchaseDate}
+                      onChange={handleChange}
+                      required
+                    />
                   </div>
-
-                  <div className="form-group date-group">
-                    <div>
-                      <label htmlFor="sshPurchaseDate" className="required">
-                        SSH Purchase Date
-                      </label>
-                      <input
-                        type="date"
-                        id="sshPurchaseDate"
-                        name="sshPurchaseDate"
-                        min={minPurchaseDate}
-                        max={maxPurchaseDate}
-                        value={formData.sshPurchaseDate}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="sshExpiryDate" className="required">
-                        SSH Expiry Date
-                      </label>
-                      <input
-                        type="date"
-                        id="sshExpiryDate"
-                        name="sshExpiryDate"
-                        min={formData.sshPurchaseDate || minPurchaseDate}
-                        value={formData.sshExpiryDate}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
+                  <div className="form-group">
+                    <label>Expiry Date</label>
+                    <input
+                      type="date"
+                      name="expiryDate"
+                      min={formData.purchaseDate || minPurchaseDate}
+                      value={formData.expiryDate}
+                      onChange={handleChange}
+                      required
+                    />
                   </div>
-
-                  <div className="form-actions">
-                    <button
-                      type="submit"
-                      className="btn btn-secondary"
-                      id="updateSSHPlanBtn"
-                    >
-                      <FaEdit /> Update SSH Plan
-                    </button>
-                  </div>
+                  <button type="submit" className="btn btn-secondary">
+                    <FaEdit /> Update Domain Plan
+                  </button>
                 </form>
               )}
 
-              <div style={{ marginTop: "1.5rem" }}>
-                <button
-                  type="button"
-                  className="btn btn-back"
-                  onClick={() => navigate(-1)}
-                >
-                  <FaArrowLeft /> Back to Domains
-                </button>
-              </div>
+              {selectedOption === "upgrade-ssh" && (
+                <form onSubmit={handleSubmitSSHPlan}>
+                  <div className="form-group">
+                    <label>SSH Name</label>
+                    <input
+                      name="sshName"
+                      value={formData.sshName}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>SSH Purchase Date</label>
+                    <input
+                      type="date"
+                      name="sshPurchaseDate"
+                      min={minPurchaseDate}
+                      max={maxPurchaseDate}
+                      value={formData.sshPurchaseDate}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>SSH Expiry Date</label>
+                    <input
+                      type="date"
+                      name="sshExpiryDate"
+                      min={formData.sshPurchaseDate || minPurchaseDate}
+                      value={formData.sshExpiryDate}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+                  <button type="submit" className="btn btn-secondary">
+                    <FaEdit /> Update SSH Plan
+                  </button>
+                </form>
+              )}
+
+              <button
+                type="button"
+                className="btn btn-back"
+                onClick={() => navigate(-1)}
+              >
+                <FaArrowLeft /> Back
+              </button>
             </section>
           </div>
         </div>

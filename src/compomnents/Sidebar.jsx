@@ -17,7 +17,10 @@ const MENU_ITEMS = [
     children: [
       {
         label: "CLIENT",
-        children: [{ label: "Add Client", href: "/client/new" }],
+        children: [
+          { label: "Add Client", href: "/client/new" },
+          { label: "All Client", href: "/client/all" },
+        ],
       },
       {
         label: "DOMIAN TRACKER",

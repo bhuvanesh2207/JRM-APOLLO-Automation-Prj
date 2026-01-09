@@ -1,30 +1,67 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import api from "../api/axios";
 import "../assets/css/login.css";
+import { FaRegEye } from "react-icons/fa";
+import { RiEyeCloseLine } from "react-icons/ri";
 import LoginPage from "../assets/images/LoginPage.avif";
-
-<img src={LoginPage} alt="Background" className="bg-image" />;
+import LoginFormBG from "../assets/images/LoginFormBG.jpg";
 
 function Login() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+
+    try {
+      const response = await api.post("/api/admin/login/", {
+        email,
+        password,
+      });
+
+      if (response.data.success) {
+        navigate("/admin-dashboard");
+      } else {
+        setError(response.data.message || "Login failed");
+      }
+    } catch (err) {
+      if (err.response) {
+        setError(err.response.data.error || "Invalid credentials");
+      } else {
+        setError("Server error. Try again later.");
+      }
+    }
+  };
 
   return (
     <div className="login-container">
+      <div
+        className="login-bg"
+        style={{
+          backgroundImage: `url(${LoginFormBG})`,
+        }}
+      ></div>
+      {/* Background animated shapes */}
+      <div className="bg-shape shape-1"></div>
+      <div className="bg-shape shape-2"></div>
+      <div className="bg-shape shape-3"></div>
+
       <div className="login-card">
-        {/* --- Left Side (Image & Overlay) --- */}
         <div className="login-left">
-          {/* Change this src to your actual image path */}
-          <img src={LoginPage} alt="Background" className="bg-image" />
+          <img src={LoginPage} alt="Login Visual" className="bg-image" />
           <div className="overlay"></div>
         </div>
 
-        {/* --- Right Side (Form) --- */}
         <div className="login-right">
-          {/* Logo */}
           <div className="brand-logo">
             <span className="brand-text">JRM / APOLLO</span>
           </div>
 
-          {/* Welcome Text */}
           <div className="header-text">
             <h4>
               Welcome to <span>Admin Login</span>
@@ -32,20 +69,21 @@ function Login() {
             <p>Sign in to continue to Dashboard.</p>
           </div>
 
-          <form>
-            {/* Username */}
+          <form onSubmit={handleSubmit}>
+            {/* Email */}
             <div className="form-group">
-              <label htmlFor="username" className="form-label">
-                Username
+              <label htmlFor="email" className="form-label">
+                Email
               </label>
-              <div className="input-wrapper">
-                <input
-                  type="text"
-                  id="username"
-                  placeholder="Enter username"
-                  className="form-input"
-                />
-              </div>
+              <input
+                type="email"
+                id="email"
+                placeholder="Enter email"
+                className="form-input"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
             </div>
 
             {/* Password */}
@@ -59,58 +97,30 @@ function Login() {
                   id="password"
                   placeholder="Enter password"
                   className="form-input"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
                 />
                 <button
                   type="button"
                   className="toggle-password"
-                  onClick={() => setShowPassword(!showPassword)}
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
-                  {/* Eye Icon SVG */}
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                    <circle cx="12" cy="12" r="3"></circle>
-                  </svg>
+                  {showPassword ? <FaRegEye /> : <RiEyeCloseLine />}
                 </button>
               </div>
             </div>
 
-            {/* Remember Me & Forgot Password */}
-            <div className="form-options">
-              <a href="#" className="forgot-link">
-                {/* Lock Icon SVG */}
-                <svg
-                  width="12"
-                  height="12"
-                  style={{ marginRight: "5px" }}
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                >
-                  <path d="M12 2C9.243 2 7 4.243 7 7v3H6a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2v-8a2 2 0 00-2-2h-1V7c0-2.757-2.243-5-5-5zm0 2c1.654 0 3 1.346 3 3v3H9V7c0-1.654 1.346-3 3-3zm0 10c1.103 0 2 .897 2 2s-.897 2-2 2-2-.897-2-2 .897-2 2-2z" />
-                </svg>
-                Forgot your password?
-              </a>
-            </div>
+            {error && <p className="error-text">{error}</p>}
 
-            {/* Submit Button */}
-            <div className="btn-submit-container">
-              <button type="submit" className="btn-submit">
-                Log In
-              </button>
-            </div>
+            <button type="submit" className="btn-submit">
+              Log In
+            </button>
           </form>
         </div>
       </div>
     </div>
   );
 }
-
 export default Login;
