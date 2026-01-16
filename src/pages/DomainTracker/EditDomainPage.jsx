@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { FaEdit, FaArrowLeft } from "react-icons/fa";
 import Navbar from "../../compomnents/Navbar";
 import Sidebar from "../../compomnents/Sidebar";
+import AutoBreadcrumb from "../../compomnents/AutoBreadcrumb";
 import api from "../../api/axios";
 
 const EditDomainPage = () => {
@@ -10,44 +11,68 @@ const EditDomainPage = () => {
   const navigate = useNavigate();
 
   const today = new Date();
-  const minPurchaseDate = "2000-01-01";
-  const maxPurchaseDate = today.toISOString().split("T")[0];
+  const minDate = "2000-01-01";
+  const maxDateToday = today.toISOString().split("T")[0]; // Only for Purchase dates
 
   const [selectedOption, setSelectedOption] = useState("update-info");
+
+  // Initial State
   const [formData, setFormData] = useState({
     domainName: "",
     registrar: "",
     clientName: "",
-    activeStatus: "active",
+    activeStatus: true, // boolean: true | false
     purchaseDate: "",
     expiryDate: "",
     sshName: "",
     sshPurchaseDate: "",
     sshExpiryDate: "",
+    hostingName: "",
+    hostingPurchaseDate: "",
+    hostingExpiryDate: "",
   });
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [errors, setErrors] = useState({});
 
-  // --------- Fetch Domain Details ---------
+  // ---------------- FETCH ----------------
   const fetchDomainDetails = async () => {
     setLoading(true);
     try {
+      // Matches BE: path('get/<int:domain_id>/', views.get_domain)
       const res = await api.get(`/api/domain/get/${id}/`);
       const data = res.data;
+
+      // Normalize active_status coming from backend
+      let activeStatusValue = true;
+      if (typeof data.active_status === "boolean") {
+        activeStatusValue = data.active_status;
+      } else if (typeof data.active_status === "string") {
+        const s = data.active_status.toLowerCase();
+        if (s === "inactive" || s === "false" || s === "0") {
+          activeStatusValue = false;
+        } else {
+          activeStatusValue = true;
+        }
+      }
 
       setFormData({
         domainName: data.domain_name || "",
         registrar: data.registrar || "",
         clientName: data.client_name || "",
-        activeStatus: data.active_status ? "active" : "inactive",
+        activeStatus: activeStatusValue,
         purchaseDate: data.purchase_date || "",
         expiryDate: data.expiry_date || "",
         sshName: data.ssh_name || "",
         sshPurchaseDate: data.ssh_purchase_date || "",
         sshExpiryDate: data.ssh_expiry_date || "",
+        hostingName: data.hosting_name || "",
+        hostingPurchaseDate: data.hosting_purchase_date || "",
+        hostingExpiryDate: data.hosting_expiry_date || "",
       });
     } catch (err) {
+      console.error(err);
       setError("Failed to fetch domain details.");
     } finally {
       setLoading(false);
@@ -59,61 +84,188 @@ const EditDomainPage = () => {
   }, [id]);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type } = e.target;
+
+    let newValue = value;
+
+    // Convert radio string value "true"/"false" to boolean
+    if (name === "activeStatus" && type === "radio") {
+      newValue = value === "true";
+    }
+
+    setFormData((prev) => ({ ...prev, [name]: newValue }));
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
-  // --------- Submit Handlers ---------
-  const handleSubmitUpdateInfo = async (e) => {
+  // ---------------- VALIDATION ----------------
+  const validateDomainInfo = () => {
+    const newErrors = {};
+
+    const domainRegex =
+      /^(?!https?:\/\/)(?!www\.)[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*\.[a-zA-Z]{2,}$/;
+
+    if (!formData.domainName.trim()) {
+      newErrors.domainName = "Domain name is required.";
+    } else if (!domainRegex.test(formData.domainName.trim())) {
+      newErrors.domainName = "Enter a valid domain (example: example.com).";
+    }
+
+    if (!formData.clientName.trim()) {
+      newErrors.clientName = "Client name is required.";
+    }
+
+    if (!formData.purchaseDate) {
+      newErrors.purchaseDate = "Purchase date is required.";
+    }
+
+    if (!formData.expiryDate) {
+      newErrors.expiryDate = "Expiry date is required.";
+    }
+
+    if (formData.purchaseDate && formData.expiryDate) {
+      if (new Date(formData.expiryDate) <= new Date(formData.purchaseDate)) {
+        newErrors.expiryDate =
+          "Domain expiry date must be after purchase date.";
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const validateSSH = () => {
+    const newErrors = {};
+
+    if (!formData.sshName.trim()) {
+      newErrors.sshName = "SSH name is required.";
+    }
+
+    if (!formData.sshPurchaseDate) {
+      newErrors.sshPurchaseDate = "SSH purchase date is required.";
+    }
+
+    if (!formData.sshExpiryDate) {
+      newErrors.sshExpiryDate = "SSH expiry date is required.";
+    }
+
+    if (formData.sshPurchaseDate && formData.sshExpiryDate) {
+      if (
+        new Date(formData.sshExpiryDate) <= new Date(formData.sshPurchaseDate)
+      ) {
+        newErrors.sshExpiryDate =
+          "SSH expiry date must be after SSH purchase date.";
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const validateHosting = () => {
+    const newErrors = {};
+
+    if (!formData.hostingName.trim()) {
+      newErrors.hostingName = "Hosting name is required.";
+    }
+
+    if (!formData.hostingPurchaseDate) {
+      newErrors.hostingPurchaseDate = "Hosting purchase date is required.";
+    }
+
+    if (!formData.hostingExpiryDate) {
+      newErrors.hostingExpiryDate = "Hosting expiry date is required.";
+    }
+
+    if (formData.hostingPurchaseDate && formData.hostingExpiryDate) {
+      if (
+        new Date(formData.hostingExpiryDate) <=
+        new Date(formData.hostingPurchaseDate)
+      ) {
+        newErrors.hostingExpiryDate =
+          "Hosting expiry date must be after Hosting purchase date.";
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // ---------------- SUBMIT HANDLERS ----------------
+  const handleSubmitDomainInfo = async (e) => {
     e.preventDefault();
+
+    if (!validateDomainInfo()) {
+      return;
+    }
+
     try {
       const payload = {
         domain_name: formData.domainName,
         registrar: formData.registrar,
         client_name: formData.clientName,
-        active_status: formData.activeStatus,
-        changes_message: "Updated domain information",
-      };
-      const res = await api.patch(`/api/domain/update/${id}/`, payload);
-      alert(res.data.message || "Domain information updated!");
-    } catch {
-      alert("Server error. Could not update domain info.");
-    }
-  };
-
-  const handleSubmitDomainPlan = async (e) => {
-    e.preventDefault();
-    try {
-      const payload = {
+        active_status: formData.activeStatus, // boolean true/false
         purchase_date: formData.purchaseDate,
         expiry_date: formData.expiryDate,
-        changes_message: "Updated domain plan",
+        changes_message: "Updated domain info",
       };
       const res = await api.patch(`/api/domain/update/${id}/`, payload);
-      alert(res.data.message || "Domain plan updated!");
-    } catch {
-      alert("Server error. Could not update domain plan.");
+      alert(res.data.message || "Domain info updated!");
+    } catch (err) {
+      console.error(err.response?.data);
+      alert(
+        err.response?.data?.errors
+          ? JSON.stringify(err.response.data.errors)
+          : "Server error"
+      );
     }
   };
 
-  const handleSubmitSSHPlan = async (e) => {
+  const handleSubmitSSH = async (e) => {
     e.preventDefault();
+
+    if (!validateSSH()) {
+      return;
+    }
+
     try {
       const payload = {
         ssh_name: formData.sshName,
         ssh_purchase_date: formData.sshPurchaseDate,
         ssh_expiry_date: formData.sshExpiryDate,
-        changes_message: "Updated SSH plan",
+        changes_message: "Updated SSH details",
       };
       const res = await api.patch(`/api/domain/update/${id}/`, payload);
-      alert(res.data.message || "SSH plan updated!");
-    } catch {
-      alert("Server error. Could not update SSH plan.");
+      alert(res.data.message || "SSH details updated!");
+    } catch (err) {
+      console.error(err);
+      alert("Server error. Could not update SSH details.");
     }
   };
 
-  if (loading) return <div>Loading domain details...</div>;
-  if (error) return <div className="text-red-600">{error}</div>;
+  const handleSubmitHosting = async (e) => {
+    e.preventDefault();
+
+    if (!validateHosting()) {
+      return;
+    }
+
+    try {
+      const payload = {
+        hosting_name: formData.hostingName,
+        hosting_purchase_date: formData.hostingPurchaseDate,
+        hosting_expiry_date: formData.hostingExpiryDate,
+        changes_message: "Updated Hosting details",
+      };
+      const res = await api.patch(`/api/domain/update/${id}/`, payload);
+      alert(res.data.message || "Hosting details updated!");
+    } catch (err) {
+      console.error(err);
+      alert("Server error. Could not update Hosting details.");
+    }
+  };
+
+  if (loading) return <div className="p-5">Loading domain details...</div>;
+  if (error) return <div className="p-5 text-red-600">{error}</div>;
 
   return (
     <div
@@ -127,181 +279,309 @@ const EditDomainPage = () => {
       <Navbar />
       <main className="app-main">
         <div className="max-w-[1200px] mx-auto px-5 mt-6">
+          <AutoBreadcrumb />
+
           <div className="bg-white rounded-lg shadow-lg p-6">
             <section className="form-container">
-              <h2>
-                <FaEdit className="domain-icon" /> Edit Domain - {id}
+              <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                <FaEdit className="domain-icon" /> Edit Domain
               </h2>
 
               {/* Tabs */}
-              <div
-                className="form-group"
-                style={{
-                  display: "flex",
-                  gap: "0.75rem",
-                  marginBottom: "1.5rem",
-                  borderBottom: "1px solid #eee",
-                  paddingBottom: "1rem",
-                }}
-              >
+              <div className="flex mb-6 tab-buttons gap-2">
                 <button
                   type="button"
-                  className="btn btn-outline"
+                  className={`btn btn-outline ${
+                    selectedOption === "update-info" ? "btn-active" : ""
+                  }`}
                   onClick={() => setSelectedOption("update-info")}
                 >
-                  Update domain info
+                  Domain Info
                 </button>
                 <button
                   type="button"
-                  className="btn btn-outline"
-                  onClick={() => setSelectedOption("upgrade-domain")}
+                  className={`btn btn-outline ${
+                    selectedOption === "ssh" ? "btn-active" : ""
+                  }`}
+                  onClick={() => setSelectedOption("ssh")}
                 >
-                  Upgrade domain plan
+                  SSH Details
                 </button>
                 <button
                   type="button"
-                  className="btn btn-outline"
-                  onClick={() => setSelectedOption("upgrade-ssh")}
+                  className={`btn btn-outline ${
+                    selectedOption === "hosting" ? "btn-active" : ""
+                  }`}
+                  onClick={() => setSelectedOption("hosting")}
                 >
-                  Upgrade SSH plan
+                  Hosting Details
                 </button>
               </div>
 
-              {/* Forms */}
+              {/* -------- Forms -------- */}
+
+              {/* 1. DOMAIN INFO */}
               {selectedOption === "update-info" && (
-                <form onSubmit={handleSubmitUpdateInfo}>
+                <form onSubmit={handleSubmitDomainInfo} className="space-y-4">
                   <div className="form-group">
-                    <label>Domain Name</label>
+                    <label className="block text-sm font-medium mb-1">
+                      Domain Name
+                    </label>
                     <input
+                      className="w-full border p-2 rounded"
                       name="domainName"
                       value={formData.domainName}
                       onChange={handleChange}
                       required
                     />
+                    {errors.domainName && (
+                      <p className="error-message text-red-500 text-sm">
+                        {errors.domainName}
+                      </p>
+                    )}
                   </div>
                   <div className="form-group">
-                    <label>Registrar</label>
+                    <label className="block text-sm font-medium mb-1">
+                      Client Name
+                    </label>
                     <input
-                      name="registrar"
-                      value={formData.registrar}
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Client Name</label>
-                    <input
+                      className="w-full border p-2 rounded"
                       name="clientName"
                       value={formData.clientName}
                       onChange={handleChange}
                       required
                     />
+                    {errors.clientName && (
+                      <p className="error-message text-red-500 text-sm">
+                        {errors.clientName}
+                      </p>
+                    )}
                   </div>
                   <div className="form-group">
-                    <label>Status</label>
-                    <div>
-                      <label>
+                    <label className="block text-sm font-medium mb-1">
+                      Registrar
+                    </label>
+                    <input
+                      className="w-full border p-2 rounded"
+                      name="registrar"
+                      value={formData.registrar}
+                      onChange={handleChange}
+                    />
+                  </div>
+
+                  {/* RADIO BUTTONS -> boolean true/false */}
+                  <div className="form-group">
+                    <label className="block text-sm font-medium mb-1">
+                      Status
+                    </label>
+                    <div className="radio-group">
+                      <label className="flex items-center gap-1">
                         <input
                           type="radio"
                           name="activeStatus"
-                          value="active"
-                          checked={formData.activeStatus === "active"}
+                          value="true"
+                          checked={formData.activeStatus === true}
                           onChange={handleChange}
-                        />{" "}
-                        Active
+                        />
+                        <span>Active</span>
                       </label>
-                      <label>
+                      <label className="flex items-center gap-1">
                         <input
                           type="radio"
                           name="activeStatus"
-                          value="inactive"
-                          checked={formData.activeStatus === "inactive"}
+                          value="false"
+                          checked={formData.activeStatus === false}
                           onChange={handleChange}
-                        />{" "}
-                        Inactive
+                        />
+                        <span>Inactive</span>
                       </label>
                     </div>
                   </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="form-group">
+                      <label className="block text-sm font-medium mb-1">
+                        Purchase Date
+                      </label>
+                      <input
+                        type="date"
+                        className="w-full border p-2 rounded"
+                        name="purchaseDate"
+                        value={formData.purchaseDate}
+                        min={minDate}
+                        max={maxDateToday}
+                        onChange={handleChange}
+                        required
+                      />
+                      {errors.purchaseDate && (
+                        <p className="error-message text-red-500 text-sm">
+                          {errors.purchaseDate}
+                        </p>
+                      )}
+                    </div>
+                    <div className="form-group">
+                      <label className="block text-sm font-medium mb-1">
+                        Expiry Date
+                      </label>
+                      <input
+                        type="date"
+                        className="w-full border p-2 rounded"
+                        name="expiryDate"
+                        value={formData.expiryDate}
+                        min={formData.purchaseDate || minDate}
+                        onChange={handleChange}
+                        required
+                      />
+                      {errors.expiryDate && (
+                        <p className="error-message text-red-500 text-sm">
+                          {errors.expiryDate}
+                        </p>
+                      )}
+                    </div>
+                  </div>
                   <button type="submit" className="btn btn-secondary">
-                    <FaEdit /> Update Info
+                    <FaEdit /> Update Domain Info
                   </button>
                 </form>
               )}
 
-              {selectedOption === "upgrade-domain" && (
-                <form onSubmit={handleSubmitDomainPlan}>
+              {/* 2. SSH DETAILS */}
+              {selectedOption === "ssh" && (
+                <form onSubmit={handleSubmitSSH} className="space-y-4">
                   <div className="form-group">
-                    <label>Purchase Date</label>
+                    <label className="block text-sm font-medium mb-1">
+                      SSH Name
+                    </label>
                     <input
-                      type="date"
-                      name="purchaseDate"
-                      min={minPurchaseDate}
-                      max={maxPurchaseDate}
-                      value={formData.purchaseDate}
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Expiry Date</label>
-                    <input
-                      type="date"
-                      name="expiryDate"
-                      min={formData.purchaseDate || minPurchaseDate}
-                      value={formData.expiryDate}
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-                  <button type="submit" className="btn btn-secondary">
-                    <FaEdit /> Update Domain Plan
-                  </button>
-                </form>
-              )}
-
-              {selectedOption === "upgrade-ssh" && (
-                <form onSubmit={handleSubmitSSHPlan}>
-                  <div className="form-group">
-                    <label>SSH Name</label>
-                    <input
+                      className="w-full border p-2 rounded"
                       name="sshName"
                       value={formData.sshName}
                       onChange={handleChange}
                       required
                     />
+                    {errors.sshName && (
+                      <p className="error-message text-red-500 text-sm">
+                        {errors.sshName}
+                      </p>
+                    )}
                   </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="form-group">
+                      <label className="block text-sm font-medium mb-1">
+                        SSH Purchase Date
+                      </label>
+                      <input
+                        type="date"
+                        className="w-full border p-2 rounded"
+                        name="sshPurchaseDate"
+                        value={formData.sshPurchaseDate}
+                        min={minDate}
+                        max={maxDateToday}
+                        onChange={handleChange}
+                        required
+                      />
+                      {errors.sshPurchaseDate && (
+                        <p className="error-message text-red-500 text-sm">
+                          {errors.sshPurchaseDate}
+                        </p>
+                      )}
+                    </div>
+                    <div className="form-group">
+                      <label className="block text-sm font-medium mb-1">
+                        SSH Expiry Date
+                      </label>
+                      <input
+                        type="date"
+                        className="w-full border p-2 rounded"
+                        name="sshExpiryDate"
+                        value={formData.sshExpiryDate}
+                        min={formData.sshPurchaseDate || minDate}
+                        onChange={handleChange}
+                        required
+                      />
+                      {errors.sshExpiryDate && (
+                        <p className="error-message text-red-500 text-sm">
+                          {errors.sshExpiryDate}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <button type="submit" className="btn btn-secondary mt-2">
+                    <FaEdit /> Update SSH Details
+                  </button>
+                </form>
+              )}
+
+              {/* 3. HOSTING DETAILS */}
+              {selectedOption === "hosting" && (
+                <form onSubmit={handleSubmitHosting} className="space-y-4">
                   <div className="form-group">
-                    <label>SSH Purchase Date</label>
+                    <label className="block text-sm font-medium mb-1">
+                      Hosting Name
+                    </label>
                     <input
-                      type="date"
-                      name="sshPurchaseDate"
-                      min={minPurchaseDate}
-                      max={maxPurchaseDate}
-                      value={formData.sshPurchaseDate}
+                      className="w-full border p-2 rounded"
+                      name="hostingName"
+                      value={formData.hostingName}
                       onChange={handleChange}
                       required
                     />
+                    {errors.hostingName && (
+                      <p className="error-message text-red-500 text-sm">
+                        {errors.hostingName}
+                      </p>
+                    )}
                   </div>
-                  <div className="form-group">
-                    <label>SSH Expiry Date</label>
-                    <input
-                      type="date"
-                      name="sshExpiryDate"
-                      min={formData.sshPurchaseDate || minPurchaseDate}
-                      value={formData.sshExpiryDate}
-                      onChange={handleChange}
-                      required
-                    />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="form-group">
+                      <label className="block text-sm font-medium mb-1">
+                        Hosting Purchase Date
+                      </label>
+                      <input
+                        type="date"
+                        className="w-full border p-2 rounded"
+                        name="hostingPurchaseDate"
+                        value={formData.hostingPurchaseDate}
+                        min={minDate}
+                        max={maxDateToday}
+                        onChange={handleChange}
+                        required
+                      />
+                      {errors.hostingPurchaseDate && (
+                        <p className="error-message text-red-500 text-sm">
+                          {errors.hostingPurchaseDate}
+                        </p>
+                      )}
+                    </div>
+                    <div className="form-group">
+                      <label className="block text-sm font-medium mb-1">
+                        Hosting Expiry Date
+                      </label>
+                      <input
+                        type="date"
+                        className="w-full border p-2 rounded"
+                        name="hostingExpiryDate"
+                        value={formData.hostingExpiryDate}
+                        min={formData.hostingPurchaseDate || minDate}
+                        onChange={handleChange}
+                        required
+                      />
+                      {errors.hostingExpiryDate && (
+                        <p className="error-message text-red-500 text-sm">
+                          {errors.hostingExpiryDate}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                  <button type="submit" className="btn btn-secondary">
-                    <FaEdit /> Update SSH Plan
+                  <button type="submit" className="btn btn-secondary mt-2">
+                    <FaEdit /> Update Hosting Details
                   </button>
                 </form>
               )}
 
               <button
                 type="button"
-                className="btn btn-back"
+                className="btn btn-back flex items-center gap-2 text-gray-600 hover:text-black mt-4"
                 onClick={() => navigate(-1)}
               >
                 <FaArrowLeft /> Back

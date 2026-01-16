@@ -1,23 +1,35 @@
 import React, { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import { FaHistory } from "react-icons/fa";
 import Navbar from "../../compomnents/Navbar";
 import Sidebar from "../../compomnents/Sidebar";
+import AutoBreadcrumb from "../../compomnents/AutoBreadcrumb";
 import api from "../../api/axios";
 
 const DomainHistory = () => {
+  const { domainId } = useParams();
+
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // Filters
   const [searchDomain, setSearchDomain] = useState("");
   const [searchDate, setSearchDate] = useState("");
 
-  // ---------- Fetch history from API ----------
+  // Pagination
+  const [entriesPerPage, setEntriesPerPage] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Fetch history
   const fetchHistory = async () => {
     setLoading(true);
     setError("");
     try {
-      const res = await api.get("/api/domain/history/"); // fetch all history
+      const url = domainId
+        ? `/api/domain/history/${domainId}/`
+        : `/api/domain/history/`;
+      const res = await api.get(url);
       if (res.data.success) {
         setHistory(res.data.history || []);
       } else {
@@ -32,24 +44,29 @@ const DomainHistory = () => {
 
   useEffect(() => {
     fetchHistory();
-  }, []);
+  }, [domainId]);
 
-  // ---------- Filtered history based on search ----------
+  // Filtered history
   const filteredHistory = history.filter((item) => {
     const domainMatch = searchDomain
-      ? item.domainName.toLowerCase().includes(searchDomain.toLowerCase())
+      ? item.domainName?.toLowerCase().includes(searchDomain.toLowerCase())
       : true;
-
     const dateMatch = searchDate
-      ? item.updated_at.slice(0, 10) === searchDate // comparing YYYY-MM-DD
+      ? item.updated_at?.slice(0, 10) === searchDate
       : true;
-
     return domainMatch && dateMatch;
   });
 
-  const countText = `${filteredHistory.length} Record${
-    filteredHistory.length !== 1 ? "s" : ""
-  }`;
+  // Pagination
+  const totalEntries = filteredHistory.length;
+  const totalPages = Math.ceil(totalEntries / entriesPerPage);
+  const paginatedHistory = filteredHistory.slice(
+    (currentPage - 1) * entriesPerPage,
+    currentPage * entriesPerPage
+  );
+  const startEntry =
+    totalEntries === 0 ? 0 : (currentPage - 1) * entriesPerPage + 1;
+  const endEntry = Math.min(currentPage * entriesPerPage, totalEntries);
 
   return (
     <div
@@ -61,106 +78,183 @@ const DomainHistory = () => {
     >
       <Sidebar />
       <Navbar />
+
       <main className="app-main">
         <div className="max-w-[1200px] mx-auto px-5 mt-6">
+          <AutoBreadcrumb />
           <div className="bg-white rounded-lg shadow-lg p-6">
-            <div className="table-header">
+            {/* Header */}
+            <div
+              className="table-header"
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 16,
+              }}
+            >
               <h2>
                 <FaHistory className="domain-icon" /> Domain History
               </h2>
-              <div className="domain-count" id="historyCount">
-                {countText}
-              </div>
             </div>
 
-            {/* Search controls */}
+            {/* Top controls: entries + filters on right */}
             <div
-              className="table-filters"
               style={{
                 display: "flex",
-                gap: "1rem",
+                justifyContent: "space-between",
                 alignItems: "center",
-                marginBottom: "1rem",
+                marginBottom: 12,
                 flexWrap: "wrap",
+                gap: "1rem",
               }}
             >
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <label
-                  htmlFor="searchDomain"
-                  style={{ fontSize: "0.85rem", marginBottom: "0.25rem" }}
+              <div>
+                <select
+                  value={entriesPerPage}
+                  onChange={(e) => {
+                    setEntriesPerPage(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  style={{ marginRight: 8 }}
                 >
-                  Search by Domain Name
-                </label>
-                <input
-                  type="text"
-                  id="searchDomain"
-                  placeholder="e.g. example.com"
-                  value={searchDomain}
-                  onChange={(e) => setSearchDomain(e.target.value)}
-                  style={{ padding: "0.4rem 0.6rem", minWidth: "220px" }}
-                />
+                  {[10, 25, 50, 100].map((num) => (
+                    <option key={num} value={num}>
+                      {num}
+                    </option>
+                  ))}
+                </select>
+                entries per page
               </div>
 
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <label
-                  htmlFor="searchDate"
-                  style={{ fontSize: "0.85rem", marginBottom: "0.25rem" }}
-                >
-                  Filter by Updated Date
-                </label>
-                <input
-                  type="date"
-                  id="searchDate"
-                  value={searchDate}
-                  onChange={(e) => setSearchDate(e.target.value)}
-                  style={{ padding: "0.3rem 0.6rem" }}
-                />
+              {/* Filters moved to right side */}
+              <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  <label
+                    htmlFor="searchDomain"
+                    style={{ fontSize: "0.85rem", marginBottom: "0.25rem" }}
+                  >
+                    Search by Domain Name
+                  </label>
+                  <input
+                    type="text"
+                    id="searchDomain"
+                    placeholder="e.g. example.com"
+                    value={searchDomain}
+                    onChange={(e) => {
+                      setSearchDomain(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    style={{ padding: "0.4rem 0.6rem", minWidth: "220px" }}
+                  />
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  <label
+                    htmlFor="searchDate"
+                    style={{ fontSize: "0.85rem", marginBottom: "0.25rem" }}
+                  >
+                    Filter by Updated Date
+                  </label>
+                  <input
+                    type="date"
+                    id="searchDate"
+                    value={searchDate}
+                    onChange={(e) => {
+                      setSearchDate(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    style={{ padding: "0.3rem 0.6rem" }}
+                  />
+                </div>
               </div>
             </div>
 
-            {/* History Table */}
+            {/* Table */}
             {loading ? (
               <div>Loading history...</div>
             ) : error ? (
               <div className="text-red-600">{error}</div>
-            ) : filteredHistory.length === 0 ? (
+            ) : totalEntries === 0 ? (
               <div>No history records found.</div>
             ) : (
-              <div className="table-responsive">
-                <table id="domainHistoryTable">
-                  <thead>
-                    <tr>
-                      <th>Domain Name</th>
-                      <th>Registrar</th>
-                      <th>Updated</th>
-                      <th>What Was Updated</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredHistory.map((record) => {
-                      const updatedDisplay = record.updated_at
-                        ? new Date(record.updated_at).toLocaleDateString(
-                            "en-US",
-                            {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            }
-                          )
-                        : "N/A";
+              <>
+                <div className="table-responsive">
+                  <table id="domainHistoryTable">
+                    <thead>
+                      <tr>
+                        <th>Domain Name</th>
+                        <th>Registrar</th>
+                        <th>Updated</th>
+                        <th>What Was Updated</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginatedHistory.map((record) => {
+                        const updatedDisplay = record.updated_at
+                          ? new Date(record.updated_at).toLocaleDateString(
+                              "en-US",
+                              {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              }
+                            )
+                          : "N/A";
 
-                      return (
-                        <tr key={record.id}>
-                          <td>{record.domainName}</td>
-                          <td>{record.registrar || "Not specified"}</td>
-                          <td>{updatedDisplay}</td>
-                          <td>{record.changes}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                        return (
+                          <tr key={record.id}>
+                            <td>{record.domain?.domain_name || "N/A"}</td>
+                            <td>
+                              {record.domain?.registrar || "Not specified"}
+                            </td>
+                            <td>{updatedDisplay}</td>
+                            <td>{record.changes}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Bottom pagination */}
+                <div className="table-footer" style={{ marginTop: "12px" }}>
+                  <div className="entries-info">
+                    {`Showing ${startEntry} to ${endEntry} of ${totalEntries} entries`}
+                  </div>
+                  <div className="pagination">
+                    <button
+                      className="pagination-btn"
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      Previous
+                    </button>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                      (page) => (
+                        <button
+                          key={page}
+                          className={`pagination-btn${
+                            currentPage === page ? " active" : ""
+                          }`}
+                          onClick={() => setCurrentPage(page)}
+                        >
+                          {page}
+                        </button>
+                      )
+                    )}
+                    <button
+                      className="pagination-btn"
+                      onClick={() =>
+                        setCurrentPage((p) => Math.min(totalPages, p + 1))
+                      }
+                      disabled={currentPage === totalPages}
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              </>
             )}
           </div>
         </div>

@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
-// import "../assets/css/login.css";
 import { FaRegEye } from "react-icons/fa";
 import { RiEyeCloseLine } from "react-icons/ri";
 import LoginPage from "../assets/images/LoginPage.avif";
@@ -12,26 +11,62 @@ function Login() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [errors, setErrors] = useState({});
   const navigate = useNavigate();
 
+  // ---------- VALIDATION ----------
+  const validate = () => {
+    const newErrors = {};
+
+    if (!email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      newErrors.email = "Enter a valid email address";
+    }
+
+    if (!password) {
+      newErrors.password = "Password is required";
+    } else if (password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // ---------- SUBMIT ----------
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!validate()) return;
+
     setError("");
 
     try {
       const response = await api.post("/api/admin/login/", {
-        email,
+        email: email.trim().toLowerCase(),
         password,
       });
 
-      if (response.data.success) {
+      if (response.status === 200) {
+        const { access, refresh, csrf: csrfToken } = response.data;
+
+        localStorage.setItem("access", access);
+        localStorage.setItem("refresh", refresh);
+        localStorage.setItem("csrf", csrfToken);
+
+        api.defaults.headers.common["Authorization"] = `Bearer ${access}`;
+        api.defaults.headers.post["X-CSRFToken"] = csrfToken;
+
         navigate("/admin-dashboard");
-      } else {
-        setError(response.data.message || "Login failed");
       }
     } catch (err) {
       if (err.response) {
-        setError(err.response.data.error || "Invalid credentials");
+        setError(
+          err.response.data.detail ||
+            err.response.data.error ||
+            "Invalid credentials"
+        );
       } else {
         setError("Server error. Try again later.");
       }
@@ -42,11 +77,10 @@ function Login() {
     <div className="login-container">
       <div
         className="login-bg"
-        style={{
-          backgroundImage: `url(${LoginFormBG})`,
-        }}
-      ></div>
-      {/* Background animated shapes */}
+        style={{ backgroundImage: `url(${LoginFormBG})` }}
+      />
+
+      {/* Background shapes */}
       <div className="bg-shape shape-1"></div>
       <div className="bg-shape shape-2"></div>
       <div className="bg-shape shape-3"></div>
@@ -69,37 +103,40 @@ function Login() {
             <p>Sign in to continue to Dashboard.</p>
           </div>
 
-          <form onSubmit={handleSubmit}>
-            {/* Email */}
+          <form onSubmit={handleSubmit} noValidate>
+            {/* EMAIL */}
             <div className="form-group">
-              <label htmlFor="email" className="form-label">
-                Email
-              </label>
+              <label className="form-label">Email</label>
               <input
                 type="email"
-                id="email"
                 placeholder="Enter email"
                 className="form-input"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setError("");
+                  if (errors.email)
+                    setErrors((prev) => ({ ...prev, email: "" }));
+                }}
               />
+              {errors.email && <p className="error-message">{errors.email}</p>}
             </div>
 
-            {/* Password */}
+            {/* PASSWORD */}
             <div className="form-group">
-              <label htmlFor="password" className="form-label">
-                Password
-              </label>
+              <label className="form-label">Password</label>
               <div className="input-wrapper">
                 <input
                   type={showPassword ? "text" : "password"}
-                  id="password"
                   placeholder="Enter password"
                   className="form-input"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setError("");
+                    if (errors.password)
+                      setErrors((prev) => ({ ...prev, password: "" }));
+                  }}
                 />
                 <button
                   type="button"
@@ -107,12 +144,16 @@ function Login() {
                   onClick={() => setShowPassword((prev) => !prev)}
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
-                  {showPassword ? <FaRegEye /> : <RiEyeCloseLine />}
+                  {showPassword ? <RiEyeCloseLine /> : <FaRegEye />}
                 </button>
               </div>
+              {errors.password && (
+                <p className="error-message">{errors.password}</p>
+              )}
             </div>
 
-            {error && <p className="error-text">{error}</p>}
+            {/* SERVER ERROR */}
+            {error && <p className="error-message">{error}</p>}
 
             <button type="submit" className="btn-submit">
               Log In
@@ -123,4 +164,5 @@ function Login() {
     </div>
   );
 }
+
 export default Login;

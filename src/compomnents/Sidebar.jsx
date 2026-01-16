@@ -17,34 +17,27 @@ const MENU_ITEMS = [
     children: [
       {
         label: "CLIENT",
-        children: [
-          { label: "Add Client", href: "/client/new" },
-          { label: "All Client", href: "/client/all" },
-        ],
+        href: "/client/all",
       },
       {
         label: "DOMIAN TRACKER",
-        children: [
-          { label: "Add Domain", href: "/domain/new" },
-          { label: "All Doamins", href: "/domain/all" },
-          { label: "Domain History", href: "/domain/history" },
-        ],
+        href: "/domain/all",
       },
     ],
   },
   {
     label: "APOLLO",
     icon: MdDashboard,
-    children: [
-      { label: "Students Detail", href: "/apollo/students-detail" },
-      {
-        label: "Domain Tracker",
-        children: [
-          { label: "Table", href: "/apollo/domain-tracker" },
-          { label: "Form", href: "/apollo/domain-tracker/form" },
-        ],
-      },
-    ],
+    // children: [
+    //   { label: "Students Detail", href: "/apollo/students-detail" },
+    //   {
+    //     label: "Domain Tracker",
+    //     children: [
+    //       { label: "Table", href: "/apollo/domain-tracker" },
+    //       { label: "Form", href: "/apollo/domain-tracker/form" },
+    //     ],
+    //   },
+    // ],
   },
 ];
 

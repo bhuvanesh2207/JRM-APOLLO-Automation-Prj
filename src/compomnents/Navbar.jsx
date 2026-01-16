@@ -40,13 +40,40 @@ function Navbar() {
     };
   }, []);
 
+  const getCSRFToken = () => {
+    const name = "csrftoken=";
+    const cookies = document.cookie.split("; ");
+    for (let cookie of cookies) {
+      if (cookie.startsWith(name)) {
+        return cookie.substring(name.length);
+      }
+    }
+    return null;
+  };
+
   const handleLogout = async () => {
     try {
-      console.log("🔍 Checking cookies before logout:");
-      console.log("Document cookies:", document.cookie);
+      const csrfToken = getCSRFToken();
 
-      const response = await api.post("/api/admin/logout/");
+      if (!csrfToken) {
+        console.error("❌ CSRF token missing");
+        return;
+      }
+
+      const response = await api.post(
+        "/api/admin/logout/",
+        {},
+        {
+          headers: {
+            "X-CSRFToken": csrfToken,
+          },
+          withCredentials: true,
+        }
+      );
+
       console.log("✅ Logout successful:", response.data);
+
+      // Redirect to login
       navigate("/", { replace: true });
     } catch (error) {
       console.error("❌ Logout failed", error);

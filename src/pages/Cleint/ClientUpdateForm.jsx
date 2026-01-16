@@ -3,6 +3,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import { FaUserPlus, FaEdit, FaRedo } from "react-icons/fa";
 import Navbar from "../../compomnents/Navbar";
 import Sidebar from "../../compomnents/Sidebar";
+import AutoBreadcrumb from "../../compomnents/AutoBreadcrumb";
+
 import api from "../../api/axios";
 
 const ClientUpdateForm = () => {
@@ -19,6 +21,7 @@ const ClientUpdateForm = () => {
   });
 
   const [loading, setLoading] = useState(true);
+  const [errors, setErrors] = useState({});
 
   // -------- Fetch existing client data --------
   useEffect(() => {
@@ -43,10 +46,49 @@ const ClientUpdateForm = () => {
     if (id) fetchClient();
   }, [id, navigate]);
 
+  // -------- Validation --------
+  const validate = () => {
+    const newErrors = {};
+
+    if (!formData.name.trim()) {
+      newErrors.name = "Name is required";
+    } else if (formData.name.trim().length < 2) {
+      newErrors.name = "Name must be at least 2 characters";
+    }
+
+    if (!formData.companyName.trim()) {
+      newErrors.companyName = "Company name is required";
+    }
+
+    if (!formData.contact.trim()) {
+      newErrors.contact = "Contact number is required";
+    } else if (!/^[0-9+\-\s()]{7,20}$/.test(formData.contact.trim())) {
+      newErrors.contact = "Enter a valid contact number";
+    }
+
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+      newErrors.email = "Enter a valid email address";
+    }
+
+    if (!formData.address.trim()) {
+      newErrors.address = "Address is required";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   // -------- Form handlers --------
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+
+    // Clear field error on change
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }));
+    }
   };
 
   const handleReset = () => {
@@ -61,6 +103,11 @@ const ClientUpdateForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!validate()) {
+      return;
+    }
+
     try {
       const payload = {
         name: formData.name,
@@ -92,6 +139,7 @@ const ClientUpdateForm = () => {
 
       <main className="app-main">
         <div className="max-w-[1200px] mx-auto px-5 mt-6">
+        <AutoBreadcrumb />
           <div className="bg-white rounded-lg shadow-lg p-6">
             <section className="form-container" ref={formRef}>
               <h2>
@@ -117,6 +165,9 @@ const ClientUpdateForm = () => {
                         onChange={handleChange}
                         required
                       />
+                      {errors.name && (
+                        <p className="error-message">{errors.name}</p>
+                      )}
                     </div>
 
                     <div>
@@ -132,6 +183,9 @@ const ClientUpdateForm = () => {
                         onChange={handleChange}
                         required
                       />
+                      {errors.companyName && (
+                        <p className="error-message">{errors.companyName}</p>
+                      )}
                     </div>
                   </div>
 
@@ -150,6 +204,9 @@ const ClientUpdateForm = () => {
                         onChange={handleChange}
                         required
                       />
+                      {errors.contact && (
+                        <p className="error-message">{errors.contact}</p>
+                      )}
                     </div>
 
                     <div>
@@ -165,6 +222,9 @@ const ClientUpdateForm = () => {
                         onChange={handleChange}
                         required
                       />
+                      {errors.email && (
+                        <p className="error-message">{errors.email}</p>
+                      )}
                     </div>
                   </div>
 
@@ -182,6 +242,9 @@ const ClientUpdateForm = () => {
                       className="address-textarea"
                       required
                     />
+                    {errors.address && (
+                      <p className="error-message">{errors.address}</p>
+                    )}
                   </div>
 
                   {/* Actions */}

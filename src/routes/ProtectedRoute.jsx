@@ -1,24 +1,23 @@
 import React, { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
-import axios from "axios";
+import axiosInstance from "../api/axios";
 
 const ProtectedRoute = ({ children }) => {
   const [isAuth, setIsAuth] = useState(null);
-
   useEffect(() => {
-    axios
-      .get("http://localhost:8000/api/auth/check/", {
-        withCredentials: true,
-      })
-      .then(() => setIsAuth(true))
-      .catch(() => setIsAuth(false));
+    const checkAuth = async () => {
+      try {
+        await axiosInstance.get("/api/admin/check_auth/");
+        setIsAuth(true);
+      } catch {
+        setIsAuth(false);
+      }
+    };
+    checkAuth();  
   }, []);
-
-  if (isAuth === null) {
-    return <div>Checking authentication...</div>;
-  }
-
-  return isAuth ? children : <Navigate to="/" replace />;
+  if (isAuth === null) return <div>Loading...</div>;
+  if (!isAuth) return <Navigate to="/" replace />;
+  return children;
 };
 
 export default ProtectedRoute;

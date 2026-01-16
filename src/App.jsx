@@ -1,16 +1,18 @@
 import { Routes, Route } from "react-router-dom";
 import Login from "./pages/Login.jsx";
 import AdminDashboard from "./pages/Admin/AdminDashboard.jsx";
-import ProtectedRoute from "./routes/ProtectedRoute";
 
+/* DOMAIN TRACKER */
 import DomainForm from "./pages/DomainTracker/DomainForm.jsx";
-import DomainDeatils from "./pages/DomainTracker/DomainDeatils.jsx";
+import DomainDetails from "./pages/DomainTracker/DomainDeatils.jsx";
 import EditDomainPage from "./pages/DomainTracker/EditDomainPage.jsx";
 import DomainUpdateHistory from "./pages/DomainTracker/DomainUpdateHistory.jsx";
 
+/* CLIENT */
 import ClientForm from "./pages/Cleint/ClientForm.jsx";
 import ClientDetails from "./pages/Cleint/ClientDetails.jsx";
-import ClientUpdateForm from "./pages/Cleint/ClientUpdateForm.jsx";
+
+import ProtectedRoute from "./routes/ProtectedRoute";
 
 function App() {
   return (
@@ -18,7 +20,7 @@ function App() {
       {/* PUBLIC */}
       <Route path="/" element={<Login />} />
 
-      {/* PROTECTED */}
+      {/* ADMIN DASHBOARD */}
       <Route
         path="/admin-dashboard"
         element={
@@ -42,7 +44,7 @@ function App() {
         path="/domain/all"
         element={
           <ProtectedRoute>
-            <DomainDeatils />
+            <DomainDetails />
           </ProtectedRoute>
         }
       />
@@ -65,9 +67,27 @@ function App() {
         }
       />
 
+      <Route
+        path="/domain/history/:domainId"
+        element={
+          <ProtectedRoute>
+            <DomainUpdateHistory />
+          </ProtectedRoute>
+        }
+      />
+
       {/* CLIENT */}
       <Route
         path="/client/new"
+        element={
+          <ProtectedRoute>
+            <ClientForm />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/client/update/:id"
         element={
           <ProtectedRoute>
             <ClientForm />
@@ -80,15 +100,6 @@ function App() {
         element={
           <ProtectedRoute>
             <ClientDetails />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/client/update/:id"
-        element={
-          <ProtectedRoute>
-            <ClientUpdateForm />
           </ProtectedRoute>
         }
       />
